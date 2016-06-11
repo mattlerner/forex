@@ -36,7 +36,11 @@ closeDictionary = {"buy": "sell", "sell": "buy"}
 takeProfitArray = {"buy": 1, "sell": -1}
 sleepPlus = 0
 
-
+#Backtest
+backtest = {
+	"capital": 10000
+	"tradeAmount": 2000
+}
 
 class Execution(object):
 	def __init__(self, domain, access_token, account_id):
@@ -128,8 +132,9 @@ class restConnect(object):
 		priceSd = np.std(priceArray)
 		return priceSd
 
+# strategy class
 class Strategy:
-	def __init__(self, prices, pricePeriod, lastPrice):
+	def __init__(self, prices):
 		self.candles = prices.prices(pricePeriod)
 		self.positions = prices.positions()
 		self.sd = prices.sd(self.candles)
@@ -138,26 +143,18 @@ class Strategy:
 		self.takeProfitIncrement = 0.0010
 		lastPrice = candles[len(candles)-1]['closeMid']	
 		
-	def bollinger(self):
-
-		print positions
-
-		if (lastPrice > (avgPrice + doublesd)):
+	def bollinger(self, pricePeriod, lastPrice):
+		if (lastPrice > (self.avgPrice + self.doublesd)):
 			signal = "sell"
 			trailingStop = 5
-		elif (lastPrice < (avgPrice - doublesd)):
+		elif (lastPrice < (self.avgPrice - self.doublesd)):
 			signal = "buy"
 			trailingStop = 5
 
-
+# backtest class
 class backTest:
-	def __init__(self, filename, resamplePeriod):
+	def __init__(self, filename):
 		self.filename = filename
-		self.resamplePeriod = resamplePeriod
-		df = pandas.read_csv(self.filename, parse_dates={'DateTime'}, index_col='DateTime', names=['Tid', 'Dealable', 'Pair', 'DateTime', 'Buy', 'Sell'], header=1, date_parser=self.parse)
-		print df
-		#grouped_data = df.resample('15Min', how='ohlc')
-		#print grouped_data
 
 	def parse(self, datetime):
 		for fmt in ('%Y-%m-%d %H:%M:%S.%f000000', '%Y-%m-%d %H:%M:%S'):
@@ -167,12 +164,34 @@ class backTest:
 				pass
 		raise ValueError('no valid date format found')
 
+	def resample(self, resamplePeriod):
+		df = pandas.read_csv(self.filename, parse_dates={'DateTime'}, index_col='DateTime', names=['Tid', 'Dealable', 'Pair', 'DateTime', 'Buy', 'Sell'], header=1, date_parser=self.parse)
+
+		del df['Tid'] 
+		del df['Dealable']
+		del df['Pair']
+
+		grouped_data = df.resample(resamplePeriod).ohlc()
+		response = grouped_data.to_pickle(self.filename+'_'+resamplePeriod+'-OHLC.pkl')
+		return response
+
+	def readPickle(self):
+		pickle = pandas.read_pickle(self.filename)
+		return pickle
+
 
 if __name__ == "__main__":
 
-	backTest = backTest("historical/EUR_USD_Week1.csv","1Min")
-	print backTest
-	exit()
+	#Convert data to pickle
+	#backTest = backTest("historical/EUR_USD_Week1.csv")
+	#output = backTest.resample("15Min")
+
+	#Read in pickle
+	#backtest = backTest("historical/EUR_USD_Week1.csv_15Min-OHLC.pkl")
+	#pickle = backtest.readPickle()
+	#for index, row in pickle.iterrows():
+	#	print row # do whatever you want on prices here
+	#exit()
 
 	while True:
 
