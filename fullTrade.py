@@ -38,8 +38,10 @@ sleepPlus = 0
 
 #Backtest
 backtest = {
-	"capital": 10000
-	"tradeAmount": 2000
+	"capital": 10000,
+	"tradeAmount": 2000,
+	"units": 80000,
+	"positions": {"buy": 0, "sell": 0}
 }
 
 class Execution(object):
@@ -151,10 +153,20 @@ class Strategy:
 			signal = "buy"
 			trailingStop = 5
 
+class streamStrategy:
+	def __init__(self, stream):
+		return stream
+
+	def bollinger(self):
+		return "hey"
+
 # backtest class
 class backTest:
-	def __init__(self, filename):
+	def __init__(self, filename, backtest=backtest, leverage=leverage, closeDictionary=closeDictionary):
 		self.filename = filename
+		self.account = {"cash":backtest['capital'], "instruments":0}
+		self.accountValue = self.account['cash'] + self.account['instruments']
+		self.backtest = backtest
 
 	def parse(self, datetime):
 		for fmt in ('%Y-%m-%d %H:%M:%S.%f000000', '%Y-%m-%d %H:%M:%S'):
@@ -179,6 +191,42 @@ class backTest:
 		pickle = pandas.read_pickle(self.filename)
 		return pickle
 
+	def positions(self):
+		return self.backtest['positions']
+
+	def executeTrade(self, side, row):
+		cashSum = 0
+		instrumentSum = 0
+
+		#Some test assumptions here: Buy at high and sell at low to be conservative
+		highOrLow = {"buy":"high","sell":"low"}
+		price = row[str.title(side)][highOrLow[side]]
+		tradeValue = self.backtest['units'] * price
+		marginUsed = tradeValue / leverage
+
+		if (self.backtest['positions'][closeDictionary[side]]):
+			#trade is being closed
+			cashSum = (cashSum + self.backtest['positions'][closeDictionary[side]] / price)
+			instrumentSum = -1 * self.account['instruments']
+			self.backtest['positions'][side] = 0
+			self.backtest['positions'][closeDictionary[side]] = 0
+		else:
+			cashSum = marginUsed * -1
+			instrumentSum = tradeValue
+			self.backtest['positions'][side] = price
+			self.backtest['positions'][closeDictionary[side]] = 0
+
+		#sign = 1 if self.backtest['positions'][closeDictionary[side]] else -1
+
+		self.account['cash'] = self.account['cash'] + cashSum
+		self.account['instruments'] = self.account['instruments'] + instrumentSum
+
+		#if (sign == -1):
+		#elif (sign == 1):
+
+		print self.account
+		print self.positions()
+
 
 if __name__ == "__main__":
 
@@ -187,11 +235,16 @@ if __name__ == "__main__":
 	#output = backTest.resample("15Min")
 
 	#Read in pickle
-	#backtest = backTest("historical/EUR_USD_Week1.csv_15Min-OHLC.pkl")
-	#pickle = backtest.readPickle()
-	#for index, row in pickle.iterrows():
-	#	print row # do whatever you want on prices here
-	#exit()
+	backtest = backTest("historical/EUR_USD_Week1.csv_15Min-OHLC.pkl")
+	pickle = backtest.readPickle()
+	i = 1
+	for index, row in pickle.iterrows():
+		side = "buy" if i % 2 else "sell"
+		backtest.executeTrade(side, row)
+		i = i + 1
+		print side
+		print row # do whatever you want on prices here
+	exit()
 
 	while True:
 
