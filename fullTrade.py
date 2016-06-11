@@ -8,24 +8,35 @@ import json
 import numpy as np
 import httplib
 import urllib
+import pandas
 
+#GLOBALS
+signal = ""
+openPositions = {"buy": 0, "sell":0}
+
+#Things to change
 instrument = "EUR_USD" 					# what instrument are we trading?
 longPeriod = 50							# what is the period of our long moving average?
 shortPeriod = 5							# what is the period of our short moving average?
 closeInterval = 300
-shortQueue = Queue.Queue()				# set up short queue
-longQueue = Queue.Queue()				# set up long queue
 stopLoss = 0.01 						# default stoploss ticks
 units = 80000 							# default units
 leverage = 50 							# default leverage
-openPositions = {"buy": 0, "sell":0}					
-nextSignal = []							# this will hold signals - ONE AT A TIME
+
+#By strategy
+
+#MA
+shortQueue = Queue.Queue()				# set up short queue
+longQueue = Queue.Queue()				# set up long queue
 lastTopMA = ""							# "short" or "long" whatever the top MA was the last tick
-signal = ""
+
+#Bollinger
 timeSinceOpen = 0
 closeDictionary = {"buy": "sell", "sell": "buy"}
 takeProfitArray = {"buy": 1, "sell": -1}
 sleepPlus = 0
+
+
 
 class Execution(object):
 	def __init__(self, domain, access_token, account_id):
@@ -117,8 +128,51 @@ class restConnect(object):
 		priceSd = np.std(priceArray)
 		return priceSd
 
+class Strategy:
+	def __init__(self, prices, pricePeriod, lastPrice):
+		self.candles = prices.prices(pricePeriod)
+		self.positions = prices.positions()
+		self.sd = prices.sd(self.candles)
+		self.avgPrice = prices.avg(candles)
+		self.doubleSd = 2 * sd
+		self.takeProfitIncrement = 0.0010
+		lastPrice = candles[len(candles)-1]['closeMid']	
+		
+	def bollinger(self):
+
+		print positions
+
+		if (lastPrice > (avgPrice + doublesd)):
+			signal = "sell"
+			trailingStop = 5
+		elif (lastPrice < (avgPrice - doublesd)):
+			signal = "buy"
+			trailingStop = 5
+
+
+class backTest:
+	def __init__(self, filename, resamplePeriod):
+		self.filename = filename
+		self.resamplePeriod = resamplePeriod
+		df = pandas.read_csv(self.filename, parse_dates={'DateTime'}, index_col='DateTime', names=['Tid', 'Dealable', 'Pair', 'DateTime', 'Buy', 'Sell'], header=1, date_parser=self.parse)
+		print df
+		#grouped_data = df.resample('15Min', how='ohlc')
+		#print grouped_data
+
+	def parse(self, datetime):
+		for fmt in ('%Y-%m-%d %H:%M:%S.%f000000', '%Y-%m-%d %H:%M:%S'):
+			try:
+				return pandas.datetime.strptime(datetime, fmt)
+			except ValueError:
+				pass
+		raise ValueError('no valid date format found')
+
 
 if __name__ == "__main__":
+
+	backTest = backTest("historical/EUR_USD_Week1.csv","1Min")
+	print backTest
+	exit()
 
 	while True:
 
@@ -158,14 +212,7 @@ if __name__ == "__main__":
 				event = tradeEvent(instrument, units, signal, trailingStop, takeProfitFull)
 				execution = Execution(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID)
 				response = execution.execute_order(event)
-
-				if (response["tradesClosed"]):
-					if (response["price"] < openPositions[signal]):
-						sleepPlus = 300
-				else:
-					openPositions[signal] = response["price"]
 		else:
 			print ""	#no signal
 
-		time.sleep(1+sleepPlus)
-		sleepPlus = 0
+		time.sleep(1)
