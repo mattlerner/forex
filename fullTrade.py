@@ -208,7 +208,7 @@ class backTest:
 
 		if (self.backtest['positions'][closeDictionary[side]]):
 			#trade is being closed
-			cashSum = (cashSum + self.backtest['positions'][closeDictionary[side]] / price)
+			cashSum = tradeValue / (price * leverage)
 			instrumentSum = -1 * self.account['instruments']
 			self.backtest['positions'][side] = 0
 			self.backtest['positions'][closeDictionary[side]] = 0
@@ -222,6 +222,9 @@ class backTest:
 		self.account['cash'] = self.account['cash'] + cashSum
 		self.account['instruments'] = self.account['instruments'] + instrumentSum
 
+		print "tradeValue ", tradeValue
+		print "cashSum ", cashSum
+		print "trade price ", price
 		print self.account
 		print self.positions()
 
@@ -235,9 +238,10 @@ if __name__ == "__main__":
 	#Read in pickle
 	backtest = backTest("historical/EUR_USD_Week1.csv_15Min-OHLC.pkl")
 	pickle = backtest.readPickle()
+	thing = ["buy","sell","sell","buy"]
 	i = 1
 	for index, row in pickle.iterrows():
-		side = "buy" if i % 2 else "sell"
+		side = thing[(i % 4) - 1]
 		backtest.executeTrade(side, row)
 		i = i + 1
 		print side
