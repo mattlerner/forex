@@ -41,7 +41,9 @@ backtest = {
 	"capital": 10000,
 	"tradeAmount": 2000,
 	"units": 80000,
-	"positions": {"buy": 0, "sell": 0}
+	"positions": {"buy": 0, "sell": 0},
+	"stopLoss": 0,
+	"takeProfit": 0
 }
 
 class Execution(object):
@@ -211,18 +213,14 @@ class backTest:
 			self.backtest['positions'][side] = 0
 			self.backtest['positions'][closeDictionary[side]] = 0
 		else:
+			#trade is being opened
 			cashSum = marginUsed * -1
 			instrumentSum = tradeValue
 			self.backtest['positions'][side] = price
 			self.backtest['positions'][closeDictionary[side]] = 0
 
-		#sign = 1 if self.backtest['positions'][closeDictionary[side]] else -1
-
 		self.account['cash'] = self.account['cash'] + cashSum
 		self.account['instruments'] = self.account['instruments'] + instrumentSum
-
-		#if (sign == -1):
-		#elif (sign == 1):
 
 		print self.account
 		print self.positions()
