@@ -228,6 +228,24 @@ class backTest:
 		print self.account
 		print self.positions()
 
+	def checkPrice(self, row):
+		highOrLow = {"buy":"high","sell":"low"}
+		price = row[str.title(side)][highOrLow[side]]
+		takeProfit = self.backtest['takeProfit']
+		stopLoss = self.backest['stopLoss']
+		if (self.positions['buy']):
+			if (stopLoss > 0 and price <= stopLoss) or (takeProfit > 0 and price >= takeProfit):
+				signal = "sell" 
+			else:
+				signal = ""
+		elif (self.positions['sell']):
+			if (stopLoss > 0 and price >= stopLoss) or (takeProfit > 0 and price <= takeProfit):
+				signal = "buy"
+			else:
+				signal = ""
+		else:
+			signal = ""
+		return signal
 
 if __name__ == "__main__":
 
