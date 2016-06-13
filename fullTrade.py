@@ -75,7 +75,6 @@ class Execution(object):
 			params, headers
 		)
 		response = json.loads(self.conn.getresponse().read())
-		print response
 		return response
 
 class tradeEvent:
@@ -196,7 +195,12 @@ class backTest:
 	def positions(self):
 		return self.backtest['positions']
 
-	def executeTrade(self, side, row):
+	def executeTrade(self, side, row, stopLoss, takeProfit):
+
+		# pass if "buy" or "sell" is unspecified
+		if not side:
+			return
+
 		cashSum = 0
 		instrumentSum = 0
 
@@ -205,15 +209,19 @@ class backTest:
 		price = row[str.title(side)][highOrLow[side]]
 		tradeValue = self.backtest['units'] * price
 		marginUsed = tradeValue / leverage
+		self.backtest['takeProfit'] = takeProfit
+		self.backtest['stopLoss'] = stopLoss
 
-		if (self.backtest['positions'][closeDictionary[side]]):
+		if (self.backtest['positions'][closeDictionary[side]]):	# if we've passed side as "buy" and there's a "sell" open
 			#trade is being closed
 			cashSum = tradeValue / (price * leverage)
 			instrumentSum = -1 * self.account['instruments']
 			self.backtest['positions'][side] = 0
 			self.backtest['positions'][closeDictionary[side]] = 0
-		else:
-			#trade is being opened
+			self.backtest['takeProfit'] = 0
+			self.backtest['stopLoss'] = 0	
+		else:	# if there is no trade open
+			#trade is being opeened
 			cashSum = marginUsed * -1
 			instrumentSum = tradeValue
 			self.backtest['positions'][side] = price
@@ -222,23 +230,23 @@ class backTest:
 		self.account['cash'] = self.account['cash'] + cashSum
 		self.account['instruments'] = self.account['instruments'] + instrumentSum
 
-		print "tradeValue ", tradeValue
-		print "cashSum ", cashSum
-		print "trade price ", price
-		print self.account
-		print self.positions()
+		#print "tradeValue ", tradeValue
+		#print "cashSum ", cashSum
+		#print "trade price ", price
+		#print self.account
+		#print self.positions()
 
-	def checkPrice(self, row):
+	def checkPrice(self, row, openSide):
 		highOrLow = {"buy":"high","sell":"low"}
-		price = row[str.title(side)][highOrLow[side]]
+		price = row[str.title(openSide)][highOrLow[openSide]]
 		takeProfit = self.backtest['takeProfit']
-		stopLoss = self.backest['stopLoss']
-		if (self.positions['buy']):
+		stopLoss = self.backtest['stopLoss']
+		if (self.backtest['positions']['buy'] != 0):
 			if (stopLoss > 0 and price <= stopLoss) or (takeProfit > 0 and price >= takeProfit):
 				signal = "sell" 
 			else:
 				signal = ""
-		elif (self.positions['sell']):
+		elif (self.backtest['positions']['sell'] != 0):
 			if (stopLoss > 0 and price >= stopLoss) or (takeProfit > 0 and price <= takeProfit):
 				signal = "buy"
 			else:
@@ -251,19 +259,28 @@ if __name__ == "__main__":
 
 	#Convert data to pickle
 	#backTest = backTest("historical/EUR_USD_Week1.csv")
-	#output = backTest.resample("15Min")
+	#output = backTest.resample("1Min")
+	#exit()
 
 	#Read in pickle
-	backtest = backTest("historical/EUR_USD_Week1.csv_15Min-OHLC.pkl")
+	backtest = backTest("historical/EUR_USD_Week1.csv_1Min-OHLC.pkl")
 	pickle = backtest.readPickle()
-	thing = ["buy","sell","sell","buy"]
-	i = 1
+	tradeOpen = 0
 	for index, row in pickle.iterrows():
-		side = thing[(i % 4) - 1]
-		backtest.executeTrade(side, row)
-		i = i + 1
-		print side
+		for a in backtest.backtest['positions']:
+			if backtest.backtest['positions'][a]:
+				signal = backtest.checkPrice(row, a)
+				if signal == "":
+					tradeOpen = 0
+			elif tradeOpen == 0:
+				signal = "sell"
+				tradeOpen = 1
+		backtest.executeTrade(signal,row,row['Buy']['high']-0.0002,row['Buy']['high']+0.0004)
 		print row # do whatever you want on prices here
+		print backtest.account
+		print "stopLoss ", backtest.backtest['stopLoss']
+		print "takeProfit ", backtest.backtest['takeProfit']
+		print backtest.positions()
 	exit()
 
 	while True:
