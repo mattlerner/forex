@@ -221,7 +221,7 @@ class backTest:
 			self.backtest['takeProfit'] = 0
 			self.backtest['stopLoss'] = 0	
 		else:	# if there is no trade open
-			#trade is being opeened
+			#trade is being opened
 			cashSum = marginUsed * -1
 			instrumentSum = tradeValue
 			self.backtest['positions'][side] = price
@@ -262,12 +262,47 @@ if __name__ == "__main__":
 	#output = backTest.resample("1Min")
 	#exit()
 
+
+	#get current price
+	#check for open order
+	#if no open order
+		#check strategy open conditions
+		#return signal
+	#if open order
+		#check strategy close conditions
+		#return signal
+	#execute signal
+	#return positions
+	#return account
+
+
+
 	#Read in pickle
-	backtest = backTest("historical/EUR_USD_Week1.csv_1Min-OHLC.pkl")
+	backtest = backTest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl")
 	pickle = backtest.readPickle()
 	tradeOpen = 0
 	for index, row in pickle.iterrows():
-		for a in backtest.backtest['positions']:
+		tradeOpen = backtest.backtest['positions']['buy']+backtest.backtest['positions']['sell']
+		if tradeOpen:
+			signal = backtest.checkPrice(row, "buy")
+			print signal
+		elif not tradeOpen:
+			signal = "buy"
+			print signal
+		result = backtest.executeTrade(signal,row,row['Buy']['high']-0.0002,row['Buy']['high']+0.0004)
+		print result
+		print backtest.positions()
+		print backtest.account
+		# print account
+		# print current price
+		# check for open positions
+			# if there's an open position check to see if it's time to close it -> signal
+			# if there's no open position, check to see if it's time to open one -> signal
+		# execute signal
+		# print execute result if there is one
+
+
+		"""for a in backtest.backtest['positions']:
 			if backtest.backtest['positions'][a]:
 				signal = backtest.checkPrice(row, a)
 				if signal == "":
@@ -280,7 +315,7 @@ if __name__ == "__main__":
 		print backtest.account
 		print "stopLoss ", backtest.backtest['stopLoss']
 		print "takeProfit ", backtest.backtest['takeProfit']
-		print backtest.positions()
+		print backtest.positions()"""
 	exit()
 
 	while True:
