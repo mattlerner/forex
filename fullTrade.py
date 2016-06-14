@@ -57,24 +57,19 @@ if __name__ == "__main__":
 	#exit()
 
 	# price array 
-	prices = Backtest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl").readPickle()
+	prices = Backtest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl",backtest,leverage,closeDictionary).readPickle()
 
 	# loop through prices
 	for index, row in prices:
-		print row
-	#get current price
-	#check for open order
-	#if no open order
-		#check strategy open conditions
-		#return signal
-	#if open order
-		#check strategy close conditions
-		#return signal
-	#execute signal
-	#return positions
-	#return account
-
-
+		currentPrice = row
+		signal = strategy(row)
+		if signal:
+			execute(signal)
+		else:
+			return
+		#execute signal
+		#return positions
+		#return account
 
 	#Read in pickle
 	"""backtest = backTest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl")

@@ -1,21 +1,8 @@
 import pandas
 
-#Backtest
-backtest = {
-	"capital": 10000,
-	"tradeAmount": 2000,
-	"units": 80000,
-	"positions": {"buy": 0, "sell": 0},
-	"stopLoss": 0,
-	"takeProfit": 0
-}
-
-leverage = 50 							# default leverage
-closeDictionary = {"buy": "sell", "sell": "buy"}
-
 # backtest class
 class Backtest:
-	def __init__(self, filename, backtest=backtest, leverage=leverage, closeDictionary=closeDictionary):
+	def __init__(self, filename, backtest, leverage, closeDictionary):
 		self.filename = filename
 		self.account = {"cash":backtest['capital'], "instruments":0}
 		self.accountValue = self.account['cash'] + self.account['instruments']
