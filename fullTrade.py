@@ -12,6 +12,7 @@ import pandas
 from execution import Execution
 from backtest import Backtest
 from events import tradeEvent
+from strategy import Strategy
 
 #GLOBALS
 signal = ""
@@ -40,7 +41,7 @@ takeProfitArray = {"buy": 1, "sell": -1}
 sleepPlus = 0
 
 #Backtest
-backtest = {
+backtestSettings = {
 	"capital": 10000,
 	"tradeAmount": 2000,
 	"units": 80000,
@@ -49,7 +50,7 @@ backtest = {
 	"takeProfit": 0
 }
 
-priceQueue = Queue.queue()
+priceQueue = Queue.Queue()
 
 if __name__ == "__main__":
 
@@ -59,17 +60,19 @@ if __name__ == "__main__":
 	#exit()
 
 	# price array
-	backtest =  Backtest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl",backtest,leverage,closeDictionary)
+	backtest =  Backtest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl",backtestSettings,leverage,closeDictionary)
 	prices = backtest.readPickle()
+	strategy = Strategy(prices, backtestSettings["positions"], priceQueue)
 
 	# loop through prices
 	for index, row in prices:
-		currentPrice = row
+		priceQueue = strategy.doQueue(priceQueue,20,row)
+		"""currentPrice = row
 		signal = strategy(row)
 		if signal:
 			execute(signal)
 		else:
-			return
+			pass"""
 		#execute signal
 		#return positions
 		#return account

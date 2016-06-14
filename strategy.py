@@ -1,4 +1,5 @@
 import Queue
+import numpy as np
 
 # strategy class
 class Strategy:
@@ -20,11 +21,26 @@ class Strategy:
 			else:
 				pass
 
+	# take a queue, queue length and row, and load the row it into the queue, while offloading the earliest element
 	def doQueue(self, queue, queueLength, row):
-		queue.put(row)
+		price = (row['Buy'] + row['Sell']) / 2 # using the average of bid/ask as the historical price
+		stats = self.queueStats(queue)
+		array = {"price":price,"sd":stats["sd"],"avg":stats["avg"]}
+		queue.put(array)
 		if (queue.qsize() > queueLength):
 			removed = queue.get()
 		return queue
+
+	def queueStats(self, currentQueue):
+		stats = {"sd":0,"avg":0}
+		qsize = currentQueue.qsize()
+		if (currentQueue.qsize() > 20):
+			k = reduce(lambda x, y: x["price"] + y["price"], list(currentQueue.queue))
+			print k
+			#print h
+			#stats["avg"] = (sum(list(queue.queue)) / queue.qsize())
+		#	stats["sd"] = np.std(list(queue.queue))
+		return stats
 
 	# bollinger strategy: purchase at the 2*sd with a take profit at the 20-period MA.
 	# set a stop loss 1/2 sd beyond the 2*sd line. if the stop loss is triggered, enter
@@ -36,9 +52,9 @@ class Strategy:
 
 		tradeOpen = (self.checkOpen() is not None)
 
-		if tradeOpen:			# close conditions
+		#if tradeOpen:			# close conditions
 
-		elif not tradeOpen:		# open conditions
+		#elif not tradeOpen:		# open conditions
 
 
 """		if (lastPrice > (self.avgPrice + self.doublesd)):
