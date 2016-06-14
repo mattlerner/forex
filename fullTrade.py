@@ -49,6 +49,8 @@ backtest = {
 	"takeProfit": 0
 }
 
+priceQueue = Queue.queue()
+
 if __name__ == "__main__":
 
 	#Convert data to pickle
@@ -56,8 +58,9 @@ if __name__ == "__main__":
 	#output = backTest.resample("1Min")
 	#exit()
 
-	# price array 
-	prices = Backtest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl",backtest,leverage,closeDictionary).readPickle()
+	# price array
+	backtest =  Backtest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl",backtest,leverage,closeDictionary)
+	prices = backtest.readPickle()
 
 	# loop through prices
 	for index, row in prices:
