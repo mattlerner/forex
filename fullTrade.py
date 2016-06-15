@@ -67,6 +67,7 @@ if __name__ == "__main__":
 	# loop through prices
 	for index, row in prices:
 		priceQueue = strategy.doQueue(priceQueue,20,row)
+		print priceQueue.queue
 		"""currentPrice = row
 		signal = strategy(row)
 		if signal:

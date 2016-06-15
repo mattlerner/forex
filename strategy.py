@@ -34,12 +34,10 @@ class Strategy:
 	def queueStats(self, currentQueue):
 		stats = {"sd":0,"avg":0}
 		qsize = currentQueue.qsize()
-		if (currentQueue.qsize() > 20):
-			k = reduce(lambda x, y: x["price"] + y["price"], list(currentQueue.queue))
-			print k
-			#print h
-			#stats["avg"] = (sum(list(queue.queue)) / queue.qsize())
-		#	stats["sd"] = np.std(list(queue.queue))
+		queueAsList = list(currentQueue.queue)
+		if (currentQueue.qsize() > 0):
+			stats["sd"] = np.std(list(x["price"] for x in queueAsList))
+			stats["avg"] = np.mean(list(x["price"] for x in queueAsList))
 		return stats
 
 	# bollinger strategy: purchase at the 2*sd with a take profit at the 20-period MA.
