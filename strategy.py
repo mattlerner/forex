@@ -40,19 +40,26 @@ class Strategy:
 			stats["avg"] = np.mean(list(x["price"] for x in queueAsList))
 		return stats
 
+	def returnLastQueueItem(self, currentQueue):
+		queueAsList = list(currentQueue.queue)
+		return queueAsList[len(queueAsList) - 1]
+
 	# bollinger strategy: purchase at the 2*sd with a take profit at the 20-period MA.
 	# set a stop loss 1/2 sd beyond the 2*sd line. if the stop loss is triggered, enter
 	# a trade as soon as the price crosses the sd line again. USE LIMIT ORDERS and perhaps
 	# even do that instead of setting some price-watching thing.
 	# Don't buy when the market is downtrending > x
 	# Don't sell when the market is uptrending > y
-	def bollinger(self, pricePeriod, lastPrice):
+	def bollinger(self, pricePeriod, lastPrice, currentQueue):
 
 		tradeOpen = (self.checkOpen() is not None)
+		lastItem = self.returnLastQueueItem(currentQueue)
+		upperBand = lastItem["price"] + lastItem["sd"]
+		lowerBand = lastItem["price"] - lastItem["sd"]
 
-		#if tradeOpen:			# close conditions
+		if not tradeOpen:	# open conditions
 
-		#elif not tradeOpen:		# open conditions
+		elif tradeOpen:		# close conditions
 
 
 """		if (lastPrice > (self.avgPrice + self.doublesd)):
