@@ -31,6 +31,7 @@ class Strategy:
 			removed = queue.get()
 		return queue
 
+	# return standard deviation and average of a queue
 	def queueStats(self, currentQueue):
 		stats = {"sd":0,"avg":0}
 		qsize = currentQueue.qsize()
@@ -40,9 +41,15 @@ class Strategy:
 			stats["avg"] = np.mean(list(x["price"] for x in queueAsList))
 		return stats
 
+	# return very last item in the queue
 	def returnLastQueueItem(self, currentQueue):
 		queueAsList = list(currentQueue.queue)
 		return queueAsList[len(queueAsList) - 1]
+
+	# return very first item in the queue
+	def returnFirstQueueItem(self, currentQueue):
+		queueAsList=list(currentQueue.queue)
+		return queueAsList[0]
 
 	# bollinger strategy: purchase at the 2*sd with a take profit at the 20-period MA.
 	# set a stop loss 1/2 sd beyond the 2*sd line. if the stop loss is triggered, enter
@@ -52,19 +59,30 @@ class Strategy:
 	# Don't sell when the market is uptrending > y
 	def bollinger(self, pricePeriod, lastPrice, currentQueue):
 
+		signalArray = {"signal":"","stopLoss":0,"takeProfit":0}
 		tradeOpen = (self.checkOpen() is not None)
 		lastItem = self.returnLastQueueItem(currentQueue)
+		firstItem = self.returnFirstQueueItem(currentQueue)
 		upperBand = lastItem["price"] + lastItem["sd"]
 		lowerBand = lastItem["price"] - lastItem["sd"]
+		uptrend = (1 if lastPrice - firstItem["price"] > (2*lastItem["sd"]) else 0)
+		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
 
 		if not tradeOpen:	# open conditions
+			if (lastPrice > upperBand and not uptrend):
+				signal = "sell"
+				stopLoss = lastPrice - (1.5*lastItem["sd"])
+				takeProfit = lastItem["avg"]
+			elif (lastPrice < lowerBand and not downtrend):
+				signal = "buy"
+				stopLoss = lastPrice + (1.5*lastItem["sd"])
+				takeProfit = lastItem["avg"]
 
 		elif tradeOpen:		# close conditions
+			if (lastPrice <= lastItem["avg"] and tradeOpen == "sell"):
+				signal = "buy"
+			elif (lastPrice >= lastItem["avg"] and tradeOpen == "buy"):
+				signal = "sell"
 
-
-"""		if (lastPrice > (self.avgPrice + self.doublesd)):
-			signal = "sell"
-			trailingStop = 5
-		elif (lastPrice < (self.avgPrice - self.doublesd)):
-			signal = "buy"
-			trailingStop = 5"""
+		signalArray = {"signal":signal,"stopLoss":stopLoss,"takeProfit":takeProfit}
+		return signalArray
