@@ -66,8 +66,8 @@ class Strategy:
 		tradeOpen = (self.checkOpen() is not None)
 		lastItem = self.returnLastQueueItem(currentQueue)
 		firstItem = self.returnFirstQueueItem(currentQueue)
-		upperBand = lastItem["avg"] + 0.8*lastItem["sd"]
-		lowerBand = lastItem["avg"] - 0.8*lastItem["sd"]
+		upperBand = lastItem["avg"] + lastItem["sd"]
+		lowerBand = lastItem["avg"] - lastItem["sd"]
 		uptrend = (1 if lastPrice - firstItem["price"] > (2*lastItem["sd"]) else 0)
 		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
 		#print "lastPrice: ", lastPrice

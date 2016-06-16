@@ -9,6 +9,7 @@ import numpy as np
 import httplib
 import urllib
 import pandas
+from plot import doFigure
 from execution import Execution
 from backtest import Backtest
 from events import tradeEvent
@@ -64,12 +65,14 @@ if __name__ == "__main__":
 	prices = backtest.readPickle()
 	strategy = Strategy(prices, backtestSettings["positions"], priceQueue)
 	queuePeriod = 3000
+	bigFig = doFigure()
 
 	# loop through prices
 	i = 0
 	for index, row in prices:
+		bigFig.drawGraph(i, ((row['Buy']+row['Sell'])/2))
 		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)
-		signal = strategy.bollinger(row, priceQueue,)
+		signal = strategy.bollinger(row, priceQueue)
 		if (signal["signal"] and i >= queuePeriod):
 			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], leverage, closeDictionary)
 			time.sleep(5)
