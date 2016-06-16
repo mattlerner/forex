@@ -7,6 +7,7 @@ class Backtest:
 		self.account = {"cash":backtest['capital'], "instruments":0}
 		self.accountValue = self.account['cash'] + self.account['instruments']
 		self.backtest = backtest
+		self.closeDictionary=closeDictionary
 
 	# parse datetimes
 	def parse(self, datetime):
@@ -39,7 +40,7 @@ class Backtest:
 		return self.backtest['positions']
 
 	# execeute simulated trade
-	def executeTrade(self, side, row, stopLoss, takeProfit):
+	def executeTrade(self, side, row, stopLoss, takeProfit, leverage, closeDictionary):
 
 		# pass if "buy" or "sell" is unspecified
 		if not side:
@@ -49,14 +50,15 @@ class Backtest:
 		instrumentSum = 0
 
 		#Some test assumptions here: Buy at high and sell at low to be conservative
-		highOrLow = {"buy":"high","sell":"low"}
-		price = row[str.title(side)][highOrLow[side]]
+		#highOrLow = {"buy":"high","sell":"low"}
+		price = row[str.title(side)]
+		#price = row[str.lower(side)][highOrLow[str.lower(side)]]
 		tradeValue = self.backtest['units'] * price
 		marginUsed = tradeValue / leverage
 		self.backtest['takeProfit'] = takeProfit
 		self.backtest['stopLoss'] = stopLoss
 
-		if (self.backtest['positions'][closeDictionary[side]]):	# if we've passed side as "buy" and there's a "sell" open
+		if (self.backtest['positions'][self.closeDictionary[side]]):	# if we've passed side as "buy" and there's a "sell" open
 			#trade is being closed
 			cashSum = tradeValue / (price * leverage)
 			instrumentSum = -1 * self.account['instruments']
@@ -69,7 +71,7 @@ class Backtest:
 			cashSum = marginUsed * -1
 			instrumentSum = tradeValue
 			self.backtest['positions'][side] = price
-			self.backtest['positions'][closeDictionary[side]] = 0
+			self.backtest['positions'][self.closeDictionary[side]] = 0
 
 		self.account['cash'] = self.account['cash'] + cashSum
 		self.account['instruments'] = self.account['instruments'] + instrumentSum

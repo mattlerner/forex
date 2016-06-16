@@ -63,61 +63,16 @@ if __name__ == "__main__":
 	backtest =  Backtest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl",backtestSettings,leverage,closeDictionary)
 	prices = backtest.readPickle()
 	strategy = Strategy(prices, backtestSettings["positions"], priceQueue)
+	queuePeriod = 3000
 
 	# loop through prices
+	i = 0
 	for index, row in prices:
-		priceQueue = strategy.doQueue(priceQueue,20,row)
-		print priceQueue.queue
-		"""currentPrice = row
-		signal = strategy(row)
-		if signal:
-			execute(signal)
-		else:
-			pass"""
-		#execute signal
-		#return positions
-		#return account
-
-	#Read in pickle
-	"""backtest = backTest("historical/EUR_USD_Week1.csv_Tick-OHLC.pkl")
-	pickle = backtest.readPickle()
-	tradeOpen = 0
-	for index, row in pickle.iterrows():
-		tradeOpen = backtest.backtest['positions']['buy']+backtest.backtest['positions']['sell']
-		if tradeOpen:
-			signal = backtest.checkPrice(row, "buy")
-			print signal
-		elif not tradeOpen:
-			signal = "buy"
-			print signal
-		result = backtest.executeTrade(signal,row,row['Buy']['high']-0.0002,row['Buy']['high']+0.0004)
-		print result
-		print backtest.positions()
-		print backtest.account"""
-		# print account
-		# print current price
-		# check for open positions
-			# if there's an open position check to see if it's time to close it -> signal
-			# if there's no open position, check to see if it's time to open one -> signal
-		# execute signal
-		# print execute result if there is one
-
-	"""while True:
-
-		signal = ""
-
-		prices = restConnect(API_DOMAIN,ACCESS_TOKEN,ACCOUNT_ID,instrument,"M1")
-
-		positions = prices.positions()
-		print positions
-
-		candles = prices.prices(20)
-		avgPrice = prices.avg(candles)
-		sd = prices.sd(candles)
-		doublesd = 2 * sd
-		lastPrice = candles[len(candles)-1]['closeMid']
-		takeProfitIncrement = 0.0010
-
-		event = tradeEvent(instrument, units, signal, trailingStop, takeProfitFull)
-		execution = Execution(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID)
-		response = execution.execute_order(event)"""
+		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)
+		signal = strategy.bollinger(row, priceQueue,)
+		if (signal["signal"] and i >= queuePeriod):
+			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], leverage, closeDictionary)
+			time.sleep(5)
+		i = i+1
+		print backtest.account
+		print strategy.positions

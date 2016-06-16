@@ -57,16 +57,24 @@ class Strategy:
 	# even do that instead of setting some price-watching thing.
 	# Don't buy when the market is downtrending > x
 	# Don't sell when the market is uptrending > y
-	def bollinger(self, pricePeriod, lastPrice, currentQueue):
-
+	def bollinger(self, lastPriceArray, currentQueue):
+		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
+		signal = ""
+		stopLoss = 0
+		takeProfit = 0
 		signalArray = {"signal":"","stopLoss":0,"takeProfit":0}
 		tradeOpen = (self.checkOpen() is not None)
 		lastItem = self.returnLastQueueItem(currentQueue)
 		firstItem = self.returnFirstQueueItem(currentQueue)
-		upperBand = lastItem["price"] + lastItem["sd"]
-		lowerBand = lastItem["price"] - lastItem["sd"]
+		upperBand = lastItem["avg"] + 0.8*lastItem["sd"]
+		lowerBand = lastItem["avg"] - 0.8*lastItem["sd"]
 		uptrend = (1 if lastPrice - firstItem["price"] > (2*lastItem["sd"]) else 0)
 		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
+		#print "lastPrice: ", lastPrice
+		#print "upperBand: ", upperBand
+		#print "lowerBand: ", lowerBand
+		#print "lastPrice - upperBand: ", lastPrice - upperBand
+		#print "lastPrice - lowerBand: ", lastPrice - lowerBand
 
 		if not tradeOpen:	# open conditions
 			if (lastPrice > upperBand and not uptrend):
@@ -79,9 +87,9 @@ class Strategy:
 				takeProfit = lastItem["avg"]
 
 		elif tradeOpen:		# close conditions
-			if (lastPrice <= lastItem["avg"] and tradeOpen == "sell"):
+			if (lastPrice <= lastItem["avg"] and self.checkOpen() == "sell"):
 				signal = "buy"
-			elif (lastPrice >= lastItem["avg"] and tradeOpen == "buy"):
+			elif (lastPrice >= lastItem["avg"] and self.checkOpen() == "buy"):
 				signal = "sell"
 
 		signalArray = {"signal":signal,"stopLoss":stopLoss,"takeProfit":takeProfit}
