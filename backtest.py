@@ -26,7 +26,7 @@ class Backtest:
 		del df['Dealable']
 		del df['Pair']
 
-		grouped_data = df.resample(resamplePeriod).ohlc()
+		grouped_data = df.resample(resamplePeriod).mean()
 		response = grouped_data.to_pickle(self.filename+'_'+resamplePeriod+'-OHLC.pkl')
 		return response
 
