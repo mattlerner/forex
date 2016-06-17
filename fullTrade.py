@@ -81,5 +81,5 @@ if __name__ == "__main__":
 			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], leverage, closeDictionary)
 			time.sleep(1)
 		i = i+1
-		#print backtest.account
-		#print backtest.backtest['positions']
+		print backtest.account
+		print backtest.backtest['positions']
