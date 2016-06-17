@@ -71,14 +71,15 @@ if __name__ == "__main__":
 	# loop through prices
 	i = 0
 	for index, row in prices:
-		print row
+		#print row
 		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)
 		signal = strategy.bollinger(row, priceQueue, backtestSettings)
-		# add checkPrice here
+		if strategy.checkOpen():
+			signal = backtest.checkPrice(row, strategy.checkOpen())
 		if (signal["signal"] and i >= queuePeriod):
 			print signal
 			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], leverage, closeDictionary)
-			time.sleep(5)
+			time.sleep(1)
 		i = i+1
-		print backtest.account
-		print backtest.backtest['positions']
+		#print backtest.account
+		#print backtest.backtest['positions']

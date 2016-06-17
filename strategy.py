@@ -9,6 +9,7 @@ class Strategy:
 		self.positions = positions
 		self.bigFig = doFigure()
 		self.i = 0
+		self.strategyVariables = {}
 		#self.sd = prices.sd(self.candles)
 		#self.avgPrice = prices.avg(candles)
 		#self.doubleSd = 2 * sd
@@ -18,11 +19,13 @@ class Strategy:
 	# if there is an open position, returns the type of position that is open
 	# right now, we're trying to be only long or only short at any given time
 	def checkOpen(self):
+		returnVar = None
 		for index in self.positions:
 			if self.positions[index]:
-				return index
+				returnVar = index
 			else:
 				pass
+		return returnVar
 
 	# take a queue, queue length and row, and load the row it into the queue, while offloading the earliest element
 	def doQueue(self, queue, queueLength, row):
@@ -76,27 +79,27 @@ class Strategy:
 		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
 		self.bigFig.drawGraph(self.i, upperBand, lastPrice, lowerBand)
 		self.i = self.i + 1
-		print "lastPrice: ", lastPrice
-		print "upperBand: ", upperBand
-		print "lowerBand: ", lowerBand
-		print "lastPrice - upperBand: ", lastPrice - upperBand
-		print "lastPrice - lowerBand: ", lastPrice - lowerBand
+		#print "lastPrice: ", lastPrice
+		#print "upperBand: ", upperBand
+		#print "lowerBand: ", lowerBand
+		#print "lastPrice - upperBand: ", lastPrice - upperBand
+		#print "lastPrice - lowerBand: ", lastPrice - lowerBand
 
 		if not tradeOpen:	# open conditions
 			if (lastPrice > upperBand and not uptrend):
 				signal = "sell"
-				stopLoss = lastPrice - (1.5*lastItem["sd"])
+				stopLoss = lastPrice + (1.5*lastItem["sd"])
 				takeProfit = lastItem["avg"]
 			elif (lastPrice < lowerBand and not downtrend):
 				signal = "buy"
-				stopLoss = lastPrice + (1.5*lastItem["sd"])
+				stopLoss = lastPrice - (1.5*lastItem["sd"])
 				takeProfit = lastItem["avg"]
 
-		elif tradeOpen:		# close conditions
+		"""elif tradeOpen:		# close conditions
 			if (lastPrice <= lastItem["avg"] and self.checkOpen() == "sell"):
 				signal = "buy"
-			elif (lastPrice >= lastItem["avg"] or lastPrice >= backtest['takeProfit'] and self.checkOpen() == "buy"):
-				signal = "sell"
+			elif (lastPrice >= lastItem["avg"] and self.checkOpen() == "buy"):
+				signal = "sell"""
 
 		signalArray = {"signal":signal,"stopLoss":stopLoss,"takeProfit":takeProfit}
 		return signalArray

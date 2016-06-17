@@ -84,20 +84,28 @@ class Backtest:
 
 	# check price to see if a stop-loss or take-profit event has been triggered for an open trade
 	def checkPrice(self, row, openSide):
-		highOrLow = {"buy":"high","sell":"low"}
-		price = row[str.title(openSide)][highOrLow[openSide]]
+		price = (row['Buy'] + row['Sell']) / 2
 		takeProfit = self.backtest['takeProfit']
 		stopLoss = self.backtest['stopLoss']
 		if (self.backtest['positions']['buy'] != 0):
-			if (stopLoss > 0 and price <= stopLoss) or (takeProfit > 0 and price >= takeProfit):
+			if (stopLoss > 0 and price <= stopLoss):
+				print "stoploss!"
+				signal = "sell"
+			elif (takeProfit > 0 and price >= takeProfit):
+				print "takeprofit!"
 				signal = "sell" 
 			else:
 				signal = ""
 		elif (self.backtest['positions']['sell'] != 0):
-			if (stopLoss > 0 and price >= stopLoss) or (takeProfit > 0 and price <= takeProfit):
+			if (stopLoss > 0 and price >= stopLoss):
+				print "stoploss!"
+				signal = "buy"
+			elif (takeProfit > 0 and price <= takeProfit):
+				print "takeprofit!"
 				signal = "buy"
 			else:
 				signal = ""
 		else:
 			signal = ""
-		return signal
+		returnArray = {"signal":signal,"stopLoss":0,"takeProfit":0}
+		return returnArray
