@@ -62,7 +62,7 @@ if __name__ == "__main__":
 	#exit()
 
 	# price array
-	backtest =  Backtest("historical/EUR_USD_Week1.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary)
+	backtest =  Backtest("historical/EUR_USD_Week1.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
 	prices = backtest.readPickle()
 	strategy = Strategy(prices, backtestSettings["positions"], priceQueue)
 	queuePeriod = 50
@@ -73,9 +73,9 @@ if __name__ == "__main__":
 	for index, row in prices:
 		#print row
 		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)
-		signal = strategy.bollinger(row, priceQueue, backtestSettings)
-		if strategy.checkOpen():
-			signal = backtest.checkPrice(row, strategy.checkOpen())
+		signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen())
+		if backtest.checkOpen():
+			signal = backtest.checkPrice(row, backtest.checkOpen())
 		if (signal["signal"] and i >= queuePeriod):
 			print signal
 			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], leverage, closeDictionary)

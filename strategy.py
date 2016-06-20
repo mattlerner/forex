@@ -16,17 +16,6 @@ class Strategy:
 		#self.takeProfitIncrement = 0.0010
 		#lastPrice = candles[len(candles)-1]['closeMid']	
 
-	# if there is an open position, returns the type of position that is open
-	# right now, we're trying to be only long or only short at any given time
-	def checkOpen(self):
-		returnVar = None
-		for index in self.positions:
-			if self.positions[index]:
-				returnVar = index
-			else:
-				pass
-		return returnVar
-
 	# take a queue, queue length and row, and load the row it into the queue, while offloading the earliest element
 	def doQueue(self, queue, queueLength, row):
 		price = (row['Buy'] + row['Sell']) / 2 # using the average of bid/ask as the historical price
@@ -64,13 +53,13 @@ class Strategy:
 	# Don't buy when the market is downtrending > x
 	# Don't sell when the market is uptrending > y
 	# reverse trade if stoploss is triggered
-	def bollinger(self, lastPriceArray, currentQueue, backtest):
+	def bollinger(self, lastPriceArray, currentQueue, backtest, checkOpen):
 		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
 		signal = ""
 		stopLoss = 0
 		takeProfit = 0
 		signalArray = {"signal":"","stopLoss":0,"takeProfit":0}
-		tradeOpen = (self.checkOpen() is not None)
+		tradeOpen = (checkOpen is not None)
 		lastItem = self.returnLastQueueItem(currentQueue)
 		firstItem = self.returnFirstQueueItem(currentQueue)
 		upperBand = lastItem["avg"] + (2 * lastItem["sd"])

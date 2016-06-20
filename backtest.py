@@ -2,11 +2,12 @@ import pandas
 
 # backtest class
 class Backtest:
-	def __init__(self, filename, backtest, leverage, closeDictionary):
+	def __init__(self, filename, backtest, leverage, closeDictionary, positions):
 		self.filename = filename
 		self.account = {"cash":backtest['capital'], "instruments":0}
 		self.accountValue = self.account['cash'] + self.account['instruments']
 		self.backtest = backtest
+		self.positions = positions
 		self.closeDictionary=closeDictionary
 
 	# parse datetimes
@@ -17,6 +18,17 @@ class Backtest:
 			except ValueError:
 				pass
 		raise ValueError('no valid date format found')
+
+	# if there is an open position, returns the type of position that is open
+	# right now, we're trying to be only long or only short at any given time
+	def checkOpen(self):
+		returnVar = None
+		for index in self.positions:
+			if self.positions[index]:
+				returnVar = index
+			else:
+				pass
+		return returnVar
 
 	# resamble tick data
 	def resample(self, resamplePeriod):
@@ -41,46 +53,47 @@ class Backtest:
 
 	# execeute simulated trade
 	def executeTrade(self, side, row, stopLoss, takeProfit, leverage, closeDictionary):
-
-		# pass if "buy" or "sell" is unspecified
 		if not side:
 			return
 
+		tradeValueMultiplier = {"buy":1,"sell":-1}
 		cashSum = 0
 		instrumentSum = 0
 
-		#Some test assumptions here: Buy at high and sell at low to be conservative
-		#highOrLow = {"buy":"high","sell":"low"}
-		price = row[str.title(side)]
-		#price = row[str.lower(side)][highOrLow[str.lower(side)]]
-		tradeValue = self.backtest['units'] * price
-		marginUsed = tradeValue / leverage
+		price = (row['Buy'] + row['Sell']) / 2
+
+		checkOpen = self.checkOpen()
+		if (checkOpen is not None):
+			multiplier = tradeValueMultiplier[checkOpen]
+			positionPrice = self.positions[checkOpen]
+			pipDifference = (price - positionPrice) * multiplier
+
+			instrumentDifference = -1 * self.account['instruments']
+			cashDifference = (pipDifference * self.backtest['units']) / leverage
+		else:
+			instrumentDifference = (self.backtest['units'] * price)
+			cashDifference = -1 * (instrumentDifference) / leverage
+
+		print "*** TRADE ***"
+		print "Price: ", price
+		#print "tradeValue: ", tradeValue
+		#print "marginUsed: ", marginUsed
+
 		self.backtest['takeProfit'] = takeProfit
 		self.backtest['stopLoss'] = stopLoss
+		self.account['instruments'] = self.account['instruments'] + instrumentDifference
+		self.account['cash'] = self.account['cash'] + cashDifference
 
 		if (self.backtest['positions'][self.closeDictionary[side]]):	# if we've passed side as "buy" and there's a "sell" open
 			#trade is being closed
-			cashSum = tradeValue / (price * leverage)
-			instrumentSum = -1 * self.account['instruments']
 			self.backtest['positions'][side] = 0
 			self.backtest['positions'][closeDictionary[side]] = 0
-			self.backtest['takeProfit'] = 0
-			self.backtest['stopLoss'] = 0	
 		else:	# if there is no trade open
 			#trade is being opened
-			cashSum = marginUsed * -1
-			instrumentSum = tradeValue
+			print "tradeOpen ", price
 			self.backtest['positions'][side] = price
 			self.backtest['positions'][self.closeDictionary[side]] = 0
 
-		self.account['cash'] = self.account['cash'] + cashSum
-		self.account['instruments'] = self.account['instruments'] + instrumentSum
-
-		#print "tradeValue ", tradeValue
-		#print "cashSum ", cashSum
-		#print "trade price ", price
-		#print self.account
-		#print self.positions()
 
 	# check price to see if a stop-loss or take-profit event has been triggered for an open trade
 	def checkPrice(self, row, openSide):
@@ -90,18 +103,22 @@ class Backtest:
 		if (self.backtest['positions']['buy'] != 0):
 			if (stopLoss > 0 and price <= stopLoss):
 				print "stoploss!"
+				print price
 				signal = "sell"
 			elif (takeProfit > 0 and price >= takeProfit):
 				print "takeprofit!"
+				print price
 				signal = "sell" 
 			else:
 				signal = ""
 		elif (self.backtest['positions']['sell'] != 0):
 			if (stopLoss > 0 and price >= stopLoss):
 				print "stoploss!"
+				print price
 				signal = "buy"
 			elif (takeProfit > 0 and price <= takeProfit):
 				print "takeprofit!"
+				print price
 				signal = "buy"
 			else:
 				signal = ""
