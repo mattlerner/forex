@@ -57,8 +57,8 @@ priceQueue = Queue.Queue()
 if __name__ == "__main__":
 
 	#Convert data to pickle
-	#backTest = Backtest("historical/EUR_USD_Week1.csv",backtestSettings,leverage,closeDictionary)
-	#output = backTest.resample("1Min")
+	#backTest = Backtest("historical/EUR_USD_Week1.csv",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
+	#output = backTest.resample("15Min")
 	#exit()
 
 	# price array
@@ -72,14 +72,14 @@ if __name__ == "__main__":
 	i = 0
 	for index, row in prices:
 		#print row
-		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)
-		signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen())
-		if backtest.checkOpen():
-			signal = backtest.checkPrice(row, backtest.checkOpen())
-		if (signal["signal"] and i >= queuePeriod):
+		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)	# add current price to queue, along with stats
+		signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen())	# check for buy/sell signals
+		if backtest.checkOpen():	# check for stoploss / takeprofit signals
+			signal = backtest.checkPrice(row, backtest.checkOpen())	# also adjust open positions
+		if (signal["signal"] and i >= queuePeriod):	# execute signals
 			print signal
 			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], leverage, closeDictionary)
-			time.sleep(1)
+			time.sleep(5)
 		i = i+1
 		print backtest.account
 		print backtest.backtest['positions']

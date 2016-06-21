@@ -64,20 +64,24 @@ class Backtest:
 
 		checkOpen = self.checkOpen()
 		if (checkOpen is not None):
+			print "Trade Closed!"
 			multiplier = tradeValueMultiplier[checkOpen]
 			positionPrice = self.positions[checkOpen]
 			pipDifference = (price - positionPrice) * multiplier
+			cashValue = (self.account["instruments"] / leverage)
 
 			instrumentDifference = -1 * self.account['instruments']
-			cashDifference = (pipDifference * self.backtest['units']) / leverage
+			cashDifference = cashValue + (pipDifference * self.backtest['units'])
 		else:
+			print "Trade Opened!"
 			instrumentDifference = (self.backtest['units'] * price)
 			cashDifference = -1 * (instrumentDifference) / leverage
 
 		print "*** TRADE ***"
+		print "Side: ", side
 		print "Price: ", price
-		#print "tradeValue: ", tradeValue
-		#print "marginUsed: ", marginUsed
+		print "instrumentDifference: ", instrumentDifference
+		print "cashDifference: ", cashDifference
 
 		self.backtest['takeProfit'] = takeProfit
 		self.backtest['stopLoss'] = stopLoss
@@ -90,14 +94,15 @@ class Backtest:
 			self.backtest['positions'][closeDictionary[side]] = 0
 		else:	# if there is no trade open
 			#trade is being opened
-			print "tradeOpen ", price
 			self.backtest['positions'][side] = price
 			self.backtest['positions'][self.closeDictionary[side]] = 0
-
+		#print self.account
+		#print self.backtest['positions']
 
 	# check price to see if a stop-loss or take-profit event has been triggered for an open trade
 	def checkPrice(self, row, openSide):
 		price = (row['Buy'] + row['Sell']) / 2
+		self.account["instruments"] = self.backtest["units"] * price;
 		takeProfit = self.backtest['takeProfit']
 		stopLoss = self.backtest['stopLoss']
 		if (self.backtest['positions']['buy'] != 0):

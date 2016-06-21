@@ -66,7 +66,7 @@ class Strategy:
 		lowerBand = lastItem["avg"] - (2 * lastItem["sd"])
 		uptrend = (1 if lastPrice - firstItem["price"] > (2*lastItem["sd"]) else 0)
 		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
-		self.bigFig.drawGraph(self.i, upperBand, lastPrice, lowerBand)
+		#self.bigFig.drawGraph(self.i, upperBand, lastPrice, lowerBand)
 		self.i = self.i + 1
 		#print "lastPrice: ", lastPrice
 		#print "upperBand: ", upperBand
@@ -77,12 +77,14 @@ class Strategy:
 		if not tradeOpen:	# open conditions
 			if (lastPrice > upperBand and not uptrend):
 				signal = "sell"
-				stopLoss = lastPrice + (1.5*lastItem["sd"])
+				stopLoss = lastPrice + (1*lastItem["sd"])
 				takeProfit = lastItem["avg"]
+				#takeProfit = lowerBand
 			elif (lastPrice < lowerBand and not downtrend):
 				signal = "buy"
-				stopLoss = lastPrice - (1.5*lastItem["sd"])
+				stopLoss = lastPrice - (1*lastItem["sd"])
 				takeProfit = lastItem["avg"]
+				#takeProfit = upperBand
 
 		"""elif tradeOpen:		# close conditions
 			if (lastPrice <= lastItem["avg"] and self.checkOpen() == "sell"):
