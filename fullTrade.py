@@ -11,7 +11,7 @@ import urllib
 import pandas
 from plot import doFigure
 from execution import Execution
-from backtest import Backtest
+from backtest import Backtest, groupResample, parse
 from events import tradeEvent
 from strategy import Strategy
 
@@ -61,12 +61,16 @@ if __name__ == "__main__":
 	#output = backTest.resample("1Min")
 	#exit()
 
+	#Group resample to pickle
+	#groupResample(2016, 1, 2, "1Min", "EUR_USD")
+	#exit()
+
 	# price array
-	backtest =  Backtest("historical/EUR_USD_Week3.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
+	#backtest =  Backtest("historical/EUR_USD_Week3.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
+	backtest =  Backtest("historical/EUR_USD_2016_1_through_2.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
 	prices = backtest.readPickle()
 	strategy = Strategy(prices, backtestSettings["positions"], priceQueue)
 	queuePeriod = 50
-	#bigFig = doFigure()
 
 	# loop through prices
 	i = 0
@@ -75,14 +79,14 @@ if __name__ == "__main__":
 		if np.isnan(row['Buy']) or np.isnan(row['Sell']):
 			continue
 		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)	# add current price to queue, along with stats
-		signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen())	# check for buy/sell signals
+		signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen(), backtest.account)	# check for buy/sell signals
 		if backtest.checkOpen():	# check for stoploss / takeprofit signals
 			signal = backtest.checkPrice(row, backtest.checkOpen())	# also adjust open positions
 		if (signal["signal"] and i >= queuePeriod):	# execute signals
 			print signal
 			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], backtestSettings["leverage"], closeDictionary)
-			time.sleep(1)
+			time.sleep(0.02)
 		i = i+1
 		print backtest.account
 		print backtest.backtest['positions']
-		time.sleep(0.01)
+		time.sleep(0.001)

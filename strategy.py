@@ -55,9 +55,9 @@ class Strategy:
 	# Don't buy when the market is downtrending > x
 	# Don't sell when the market is uptrending > y
 	# reverse trade if stoploss is triggered
-	def bollinger(self, lastPriceArray, currentQueue, backtest, checkOpen):
+	def bollinger(self, lastPriceArray, currentQueue, backtest, checkOpen, account):
 		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
-		backtest["units"] = (2000/lastPrice) * backtest["leverage"]
+		backtest["units"] = (0.2 * (account["instruments"]/backtest["leverage"] + account["cash"]) / lastPrice) * backtest["leverage"]
 		signal = ""
 		stopLoss = 0
 		takeProfit = 0

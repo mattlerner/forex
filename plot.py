@@ -25,6 +25,14 @@ class doFigure(object):
 		plt.show()
 		plt.pause(0.001)
 
+	def drawCashGraph(self, accountXvalue, accountYvalue):
+		self.priceX.append(accountXvalue)
+		self.priceY.append(accountYvalue)
+		plt.plot(accountXvalue, accountYvalue, '.b-')
+		plt.draw()
+		plt.show()
+		plt.pause(0.0001)
+
 	def drawScatter(self, priceXvalue, priceYvalue, lowerYvalue, upperYvalue):
 		self.priceX.append(priceXvalue)
 		self.priceY.append(priceYvalue)

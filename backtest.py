@@ -1,5 +1,42 @@
 import pandas
 
+
+def groupResample(year, startMonth, endMonth, resamplePeriod, currency):
+	currentMonth = startMonth
+	currentWeek = 1
+	ind = True
+	arrayOfDataframes = []
+	while (ind):
+		filename = "historical/" + currency + "_" + str(year) + "_" + str(currentMonth) + "-Week" + str(currentWeek) + ".csv"
+
+		try:
+			df = pandas.read_csv(filename, parse_dates={'DateTime'}, index_col='DateTime', names=['Tid', 'Dealable', 'Pair', 'DateTime', 'Buy', 'Sell'], header=1, date_parser=parse)
+			print filename
+		except:
+			ind = (currentMonth != endMonth)
+			currentMonth = currentMonth + 1
+			currentWeek = 1
+			continue
+
+		del df['Tid'] 
+		del df['Dealable']
+		del df['Pair']
+
+		grouped_data = df.resample(resamplePeriod).mean()
+		arrayOfDataframes.append(grouped_data)
+		currentWeek = currentWeek + 1
+	final = pandas.concat(arrayOfDataframes)
+	response = final.to_pickle("historical/"+currency+"_"+str(year)+"_"+str(startMonth)+"_through_"+str(endMonth)+".pkl")
+	return response
+
+def parse(datetime):
+	for fmt in ('%Y-%m-%d %H:%M:%S.%f000000', '%Y-%m-%d %H:%M:%S'):
+		try:
+			return pandas.datetime.strptime(datetime, fmt)
+		except ValueError:
+			pass
+	raise ValueError('no valid date format found')
+
 # backtest class
 class Backtest:
 	def __init__(self, filename, backtest, leverage, closeDictionary, positions):
@@ -41,6 +78,7 @@ class Backtest:
 		grouped_data = df.resample(resamplePeriod).mean()
 		response = grouped_data.to_pickle(self.filename+'_'+resamplePeriod+'-OHLC.pkl')
 		return response
+
 
 	# read and return pickle as generator
 	def readPickle(self):
