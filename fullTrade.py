@@ -25,7 +25,6 @@ longPeriod = 50							# what is the period of our long moving average?
 shortPeriod = 5							# what is the period of our short moving average?
 closeInterval = 300
 stopLoss = 0.01 						# default stoploss ticks
-units = 80000 							# default units
 leverage = 50 							# default leverage
 
 #By strategy
@@ -48,7 +47,8 @@ backtestSettings = {
 	"units": 80000,
 	"positions": {"buy": 0, "sell": 0},
 	"stopLoss": 0,
-	"takeProfit": 0
+	"takeProfit": 0,
+	"leverage":50
 }
 
 priceQueue = Queue.Queue()
@@ -57,12 +57,12 @@ priceQueue = Queue.Queue()
 if __name__ == "__main__":
 
 	#Convert data to pickle
-	#backTest = Backtest("historical/EUR_USD_Week1.csv",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
-	#output = backTest.resample("15Min")
+	#backTest = Backtest("historical/EUR_USD_Week3.csv",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
+	#output = backTest.resample("1Min")
 	#exit()
 
 	# price array
-	backtest =  Backtest("historical/EUR_USD_Week1.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
+	backtest =  Backtest("historical/EUR_USD_Week3.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
 	prices = backtest.readPickle()
 	strategy = Strategy(prices, backtestSettings["positions"], priceQueue)
 	queuePeriod = 50
@@ -71,15 +71,18 @@ if __name__ == "__main__":
 	# loop through prices
 	i = 0
 	for index, row in prices:
-		#print row
+		print row
+		if np.isnan(row['Buy']) or np.isnan(row['Sell']):
+			continue
 		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)	# add current price to queue, along with stats
 		signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen())	# check for buy/sell signals
 		if backtest.checkOpen():	# check for stoploss / takeprofit signals
 			signal = backtest.checkPrice(row, backtest.checkOpen())	# also adjust open positions
 		if (signal["signal"] and i >= queuePeriod):	# execute signals
 			print signal
-			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], leverage, closeDictionary)
-			time.sleep(5)
+			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], backtestSettings["leverage"], closeDictionary)
+			time.sleep(1)
 		i = i+1
 		print backtest.account
 		print backtest.backtest['positions']
+		time.sleep(0.01)

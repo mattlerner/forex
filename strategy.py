@@ -39,11 +39,13 @@ class Strategy:
 	# return very last item in the queue
 	def returnLastQueueItem(self, currentQueue):
 		queueAsList = list(currentQueue.queue)
+		print "returnLastQueueItem: ", queueAsList[len(queueAsList) - 1]
 		return queueAsList[len(queueAsList) - 1]
 
 	# return very first item in the queue
 	def returnFirstQueueItem(self, currentQueue):
 		queueAsList=list(currentQueue.queue)
+		print "returnFirstQueueItem: ", queueAsList[0]
 		return queueAsList[0]
 
 	# bollinger strategy: purchase at the 2*sd with a take profit at the 20-period MA.
@@ -55,6 +57,7 @@ class Strategy:
 	# reverse trade if stoploss is triggered
 	def bollinger(self, lastPriceArray, currentQueue, backtest, checkOpen):
 		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
+		backtest["units"] = (2000/lastPrice) * backtest["leverage"]
 		signal = ""
 		stopLoss = 0
 		takeProfit = 0
@@ -64,6 +67,10 @@ class Strategy:
 		firstItem = self.returnFirstQueueItem(currentQueue)
 		upperBand = lastItem["avg"] + (2 * lastItem["sd"])
 		lowerBand = lastItem["avg"] - (2 * lastItem["sd"])
+		print "upperBand: ", upperBand
+		print "lowerBand: ", lowerBand
+		print "avg: ", lastItem["avg"]
+		print "lastItem SD: ", lastItem["sd"]
 		uptrend = (1 if lastPrice - firstItem["price"] > (2*lastItem["sd"]) else 0)
 		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
 		#self.bigFig.drawGraph(self.i, upperBand, lastPrice, lowerBand)
@@ -77,13 +84,13 @@ class Strategy:
 		if not tradeOpen:	# open conditions
 			if (lastPrice > upperBand and not uptrend):
 				signal = "sell"
-				stopLoss = lastPrice + (1*lastItem["sd"])
-				takeProfit = lastItem["avg"]
+				stopLoss = lastPrice + (1.5*lastItem["sd"])
+				takeProfit = lastItem["avg"] - (0.5*lastItem["sd"])
 				#takeProfit = lowerBand
 			elif (lastPrice < lowerBand and not downtrend):
 				signal = "buy"
-				stopLoss = lastPrice - (1*lastItem["sd"])
-				takeProfit = lastItem["avg"]
+				stopLoss = lastPrice - (1.5*lastItem["sd"])
+				takeProfit = lastItem["avg"] + (0.5*lastItem["sd"])
 				#takeProfit = upperBand
 
 		"""elif tradeOpen:		# close conditions
