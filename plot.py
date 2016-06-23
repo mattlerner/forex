@@ -33,6 +33,10 @@ class doFigure(object):
 		plt.show()
 		plt.pause(0.0001)
 
+	def drawLine(self, i, side):
+		arrayLine = {"sell":"r","buy":"g"}
+		plt.axvline(x=i, linewidth=1, color=arrayLine[side])
+
 	def drawScatter(self, priceXvalue, priceYvalue, lowerYvalue, upperYvalue):
 		self.priceX.append(priceXvalue)
 		self.priceY.append(priceYvalue)

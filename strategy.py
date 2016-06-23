@@ -7,7 +7,6 @@ class Strategy:
 	def __init__(self, prices, positions, priceQueue):
 		#self.candles = prices.prices(pricePeriod)
 		self.positions = positions
-		self.bigFig = doFigure()
 		self.i = 0
 		self.strategyVariables = {}
 		#self.sd = prices.sd(self.candles)
@@ -39,13 +38,11 @@ class Strategy:
 	# return very last item in the queue
 	def returnLastQueueItem(self, currentQueue):
 		queueAsList = list(currentQueue.queue)
-		print "returnLastQueueItem: ", queueAsList[len(queueAsList) - 1]
 		return queueAsList[len(queueAsList) - 1]
 
 	# return very first item in the queue
 	def returnFirstQueueItem(self, currentQueue):
 		queueAsList=list(currentQueue.queue)
-		print "returnFirstQueueItem: ", queueAsList[0]
 		return queueAsList[0]
 
 	# bollinger strategy: purchase at the 2*sd with a take profit at the 20-period MA.
@@ -55,9 +52,9 @@ class Strategy:
 	# Don't buy when the market is downtrending > x
 	# Don't sell when the market is uptrending > y
 	# reverse trade if stoploss is triggered
-	def bollinger(self, lastPriceArray, currentQueue, backtest, checkOpen, account):
+	def bollinger(self, lastPriceArray, currentQueue, backtest, checkOpen, account, display):
 		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
-		backtest["units"] = (0.2 * (account["instruments"]/backtest["leverage"] + account["cash"]) / lastPrice) * backtest["leverage"]
+		backtest["units"] = (2000 / lastPrice) * backtest["leverage"]
 		signal = ""
 		stopLoss = 0
 		takeProfit = 0
@@ -67,37 +64,27 @@ class Strategy:
 		firstItem = self.returnFirstQueueItem(currentQueue)
 		upperBand = lastItem["avg"] + (2 * lastItem["sd"])
 		lowerBand = lastItem["avg"] - (2 * lastItem["sd"])
-		print "upperBand: ", upperBand
-		print "lowerBand: ", lowerBand
-		print "avg: ", lastItem["avg"]
-		print "lastItem SD: ", lastItem["sd"]
-		uptrend = (1 if lastPrice - firstItem["price"] > (2*lastItem["sd"]) else 0)
-		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
-		#self.bigFig.drawGraph(self.i, upperBand, lastPrice, lowerBand)
-		self.i = self.i + 1
-		#print "lastPrice: ", lastPrice
 		#print "upperBand: ", upperBand
 		#print "lowerBand: ", lowerBand
-		#print "lastPrice - upperBand: ", lastPrice - upperBand
-		#print "lastPrice - lowerBand: ", lastPrice - lowerBand
+		#print "avg: ", lastItem["avg"]
+		#print "lastItem SD: ", lastItem["sd"]
+		uptrend = (1 if lastPrice - firstItem["price"] > (2*lastItem["sd"]) else 0)
+		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
+		display.drawGraph(self.i, upperBand, lastPrice, lowerBand)
+		self.i = self.i + 1
 
 		if not tradeOpen:	# open conditions
-			if (lastPrice > upperBand and not uptrend):
+			if (lastPrice > upperBand):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
 				signal = "sell"
 				stopLoss = lastPrice + (1.5*lastItem["sd"])
-				takeProfit = lastItem["avg"] - (0.5*lastItem["sd"])
+				takeProfit = lastItem["avg"] - (2*lastItem["sd"])
 				#takeProfit = lowerBand
-			elif (lastPrice < lowerBand and not downtrend):
+			elif (lastPrice < lowerBand):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
 				signal = "buy"
 				stopLoss = lastPrice - (1.5*lastItem["sd"])
-				takeProfit = lastItem["avg"] + (0.5*lastItem["sd"])
+				takeProfit = lastItem["avg"] + (2*lastItem["sd"])
 				#takeProfit = upperBand
-
-		"""elif tradeOpen:		# close conditions
-			if (lastPrice <= lastItem["avg"] and self.checkOpen() == "sell"):
-				signal = "buy"
-			elif (lastPrice >= lastItem["avg"] and self.checkOpen() == "buy"):
-				signal = "sell"""
+		backtest["lastStopLoss"] = ""
 
 		signalArray = {"signal":signal,"stopLoss":stopLoss,"takeProfit":takeProfit}
 		return signalArray

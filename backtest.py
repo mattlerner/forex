@@ -146,22 +146,20 @@ class Backtest:
 		if (self.backtest['positions']['buy'] != 0):
 			if (stopLoss > 0 and price <= stopLoss):
 				print "stoploss!"
-				print price
+				self.backtest["lastStopLoss"] = "sell"
 				signal = "sell"
 			elif (takeProfit > 0 and price >= takeProfit):
 				print "takeprofit!"
-				print price
 				signal = "sell" 
 			else:
 				signal = ""
 		elif (self.backtest['positions']['sell'] != 0):
 			if (stopLoss > 0 and price >= stopLoss):
 				print "stoploss!"
-				print price
+				self.backtest["lastStopLoss"] = "buy"
 				signal = "buy"
 			elif (takeProfit > 0 and price <= takeProfit):
 				print "takeprofit!"
-				print price
 				signal = "buy"
 			else:
 				signal = ""
