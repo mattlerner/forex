@@ -4,16 +4,22 @@ from plot import doFigure
 
 # strategy class
 class Strategy:
-	def __init__(self, prices, positions, priceQueue):
+	def __init__(self, prices, positions, priceQueue, settings):
 		#self.candles = prices.prices(pricePeriod)
 		self.positions = positions
 		self.i = 0
 		self.strategyVariables = {}
-		#self.sd = prices.sd(self.candles)
-		#self.avgPrice = prices.avg(candles)
-		#self.doubleSd = 2 * sd
-		#self.takeProfitIncrement = 0.0010
-		#lastPrice = candles[len(candles)-1]['closeMid']	
+
+	# if there is an open position, returns the type of position that is open
+	# right now, we're trying to be only long or only short at any given time
+	def checkOpen(self):
+		returnVar = None
+		for index in self.positions:
+			if self.positions[index]:
+				returnVar = index
+			else:
+				pass
+		return returnVar
 
 	# take a queue, queue length and row, and load the row it into the queue, while offloading the earliest element
 	def doQueue(self, queue, queueLength, row):
@@ -33,6 +39,7 @@ class Strategy:
 		if (currentQueue.qsize() > 0):
 			stats["sd"] = np.std(list(x["price"] for x in queueAsList))
 			stats["avg"] = np.mean(list(x["price"] for x in queueAsList))
+			print stats["avg"]
 		return stats
 
 	# return very last item in the queue
@@ -52,14 +59,13 @@ class Strategy:
 	# Don't buy when the market is downtrending > x
 	# Don't sell when the market is uptrending > y
 	# reverse trade if stoploss is triggered
-	def bollinger(self, lastPriceArray, currentQueue, backtest, checkOpen, account, display):
+	def bollinger(self, lastPriceArray, currentQueue, settings, tradeOpen, display, backtest):
 		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
-		backtest["units"] = (2000 / lastPrice) * backtest["leverage"]
+		settings["units"] = (settings["tradeAmount"] / lastPrice) *	 settings["leverage"]
 		signal = ""
 		stopLoss = 0
 		takeProfit = 0
 		signalArray = {"signal":"","stopLoss":0,"takeProfit":0}
-		tradeOpen = (checkOpen is not None)
 		lastItem = self.returnLastQueueItem(currentQueue)
 		firstItem = self.returnFirstQueueItem(currentQueue)
 		upperBand = lastItem["avg"] + (2 * lastItem["sd"])
@@ -73,18 +79,20 @@ class Strategy:
 		display.drawGraph(self.i, upperBand, lastPrice, lowerBand)
 		self.i = self.i + 1
 
+		# BACKTEST ONLY
+		if tradeOpen:
+			signal = backtest.checkPrice(lastPriceArray, backtest.checkOpen())	# also adjust open positions
+
 		if not tradeOpen:	# open conditions
 			if (lastPrice > upperBand):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
 				signal = "sell"
 				stopLoss = lastPrice + (1.5*lastItem["sd"])
 				takeProfit = lastItem["avg"] - (2*lastItem["sd"])
-				#takeProfit = lowerBand
 			elif (lastPrice < lowerBand):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
 				signal = "buy"
 				stopLoss = lastPrice - (1.5*lastItem["sd"])
 				takeProfit = lastItem["avg"] + (2*lastItem["sd"])
-				#takeProfit = upperBand
-		backtest["lastStopLoss"] = ""
+		settings["lastStopLoss"] = ""
 
 		signalArray = {"signal":signal,"stopLoss":stopLoss,"takeProfit":takeProfit}
 		return signalArray

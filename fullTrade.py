@@ -11,13 +11,45 @@ import urllib
 import pandas
 from plot import doFigure
 from execution import Execution
-from backtest import Backtest, groupResample, parse
+from backtest import Backtest, groupResample
 from events import tradeEvent
 from strategy import Strategy
 
+# TOGGLES
+backtestIndicator = True # are we backtesting?
+liveIndicator = False	# are we trading live?
+
+# BACKTEST STARTING VARIABLES
+backtestSettings = {
+	"capital": 10000,
+	"tradeAmount": 2000,
+	"stopLoss": 0,
+	"takeProfit": 0,
+	"leverage":50,
+	"lastStopLoss":""
+}
+
+# LIVE STARTING VARIABLES
+# NOTE: Make sure these match the actual state of the account!
+# At some point, pull them from the account where possible
+backtestSettings = {
+	"capital": 10000,
+	"tradeAmount": 2000,
+	"stopLoss": 0,
+	"takeProfit": 0,
+	"leverage":50,
+	"lastStopLoss":""
+}
+
+backtestPositions =	{"buy": 0, "sell": 0}
+
+# STORE ALL STRATEGY SETTINGS HERE
+strategySettings = {
+	"queuePeriod":50
+}
+
 #GLOBALS
 signal = ""
-openPositions = {"buy": 0, "sell":0}
 
 #Things to change
 instrument = "EUR_USD" 					# what instrument are we trading?
@@ -36,61 +68,63 @@ lastTopMA = ""							# "short" or "long" whatever the top MA was the last tick
 
 #Bollinger
 timeSinceOpen = 0
-closeDictionary = {"buy": "sell", "sell": "buy"}
 takeProfitArray = {"buy": 1, "sell": -1}
 sleepPlus = 0
 
-#Backtest
-backtestSettings = {
-	"capital": 10000,
-	"tradeAmount": 2000,
-	"units": 80000,
-	"positions": {"buy": 0, "sell": 0},
-	"stopLoss": 0,
-	"takeProfit": 0,
-	"leverage":50,
-	"lastStopLoss":""
-}
-
+#Declare the queue that will store prices
 priceQueue = Queue.Queue()
+
+#For backtest: Instantiate matPlotLib figure
 display = doFigure()
 
-# backtest
 if __name__ == "__main__":
+	if backtestIndicator:								# conduct backtest
+		print " *** BACKTEST *** "
+		#CONVERT DATA TO PICKLE
+		#backTest = Backtest("historical/EUR_USD_Week3.csv",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
+		#output = backTest.resample("1Min")
+		#exit()
 
-	#Convert data to pickle
-	#backTest = Backtest("historical/EUR_USD_Week3.csv",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
-	#output = backTest.resample("1Min")
-	#exit()
+		#GROUP RESAMPLE TO PICKLE
+		#groupResample(2015, 1, 12, "1Min", "EUR_USD")
+		#exit()
 
-	#Group resample to pickle
-	#groupResample(2015, 1, 12, "1Min", "EUR_USD")
-	#exit()
+		# READ PICKLE INTO DATAFRAME (prices)
+		#backtest =  Backtest("historical/EUR_USD_Week3.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
+		backtest = Backtest("historical/EUR_USD_2016_1_through_2.pkl",backtestSettings,leverage,backtestPositions)
+		#backtest =  Backtest("historical/EUR_USD_2015_1_through_12.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
+		prices = backtest.readPickle()
 
-	# price array
-	#backtest =  Backtest("historical/EUR_USD_Week3.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
-	backtest =  Backtest("historical/EUR_USD_2016_1_through_2.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
-	#backtest =  Backtest("historical/EUR_USD_2015_1_through_12.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
-	prices = backtest.readPickle()
-	strategy = Strategy(prices, backtestSettings["positions"], priceQueue)
-	queuePeriod = 20
+		# INSTANTIATE STRATEGY
+		strategy = Strategy(prices, backtestPositions, priceQueue, backtestSettings)
 
-	# loop through prices
-	i = 0
-	for index, row in prices:
-		#print row
-		if np.isnan(row['Buy']) or np.isnan(row['Sell']):
-			continue
-		priceQueue = strategy.doQueue(priceQueue,queuePeriod,row)	# add current price to queue, along with stats
-		signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen(), backtest.account, display)	# check for buy/sell signals
-		if backtest.checkOpen():	# check for stoploss / takeprofit signals
-			signal = backtest.checkPrice(row, backtest.checkOpen())	# also adjust open positions
-		if (signal["signal"] and i >= queuePeriod):	# execute signals
-			display.drawLine(i, signal["signal"])
-			#print signal
-			backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], backtestSettings["leverage"], closeDictionary)
-			time.sleep(0.01)
-		i = i+1
-		#print backtest.account
-		#print backtest.backtest['positions']
-		time.sleep(0.001)
+		# LOOP THROUGH PRICES
+		i = 0											# for displaying trades in a scatterplot
+		for index, row in prices:
+
+			# SKIP ERRORS IN PICKLE
+			if np.isnan(row['Buy']) or np.isnan(row['Sell']):
+				continue
+
+			# 0.A: ADD CURRENT PRICE TO QUEUE
+			priceQueue = strategy.doQueue(priceQueue,strategySettings["queuePeriod"],row)	# add current price to queue, along with stats
+
+			# 1.A: CHECK IF TRADE IS OPEN
+			tradeOpen = strategy.checkOpen()
+
+			# 1.B: CHECK CLOSE CONDITIONS
+
+			# 2.A: STRATEGY:
+			signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen(), display, backtest)	# check for buy/sell signals
+			if signal and i >= strategySettings["queuePeriod"]:
+				print "SIGNAL: ", signal
+				backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], backtestSettings["leverage"])
+			else:
+				pass
+
+			i = i + 1 									# increment loop for scaterplot
+			time.sleep(0.001)							# give some time to process
+			print backtest.account
+
+	elif liveIndicator:
+		print " *** LIVE TRADING ***"					# live trading
