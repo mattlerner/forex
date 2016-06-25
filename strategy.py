@@ -84,9 +84,9 @@ class Strategy:
 		#print "lowerBand: ", lowerBand
 		#print "avg: ", lastItem["avg"]
 		#print "lastItem SD: ", lastItem["sd"]
-		uptrend = (1 if lastItem["avg"] - firstItem["avg"] > (2*lastItem["sd"]) else 0)
-		downtrend = (1 if lastItem["avg"] - lastItem["avg"] > (2*lastItem["sd"]) else 0)
-		display.drawGraph(self.i, upperBand, lastPrice, lowerBand)
+		uptrend = (1 if lastItem["avg"] - firstItem["avg"] > (1*lastItem["sd"]) else 0)
+		downtrend = (1 if firstItem["avg"] - lastItem["avg"] > (1*lastItem["sd"]) else 0)
+		#display.drawGraph(self.i, upperBand, lastPrice, lowerBand)
 		self.i = self.i + 1
 
 		# BACKTEST ONLY
@@ -106,7 +106,7 @@ class Strategy:
 
 		if signal:
 			print signal
-			display.drawLine(self.i, signal)
+			#display.drawLine(self.i, signal)
 
 		signalArray = {"signal":signal,"stopLoss":stopLoss,"takeProfit":takeProfit}
 		return signalArray
