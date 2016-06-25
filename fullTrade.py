@@ -19,16 +19,6 @@ from strategy import Strategy
 backtestIndicator = True # are we backtesting?
 liveIndicator = False	# are we trading live?
 
-# BACKTEST STARTING VARIABLES
-backtestSettings = {
-	"capital": 10000,
-	"tradeAmount": 2000,
-	"stopLoss": 0,
-	"takeProfit": 0,
-	"leverage":50,
-	"lastStopLoss":""
-}
-
 # LIVE STARTING VARIABLES
 # NOTE: Make sure these match the actual state of the account!
 # At some point, pull them from the account where possible
@@ -97,7 +87,7 @@ if __name__ == "__main__":
 		prices = backtest.readPickle()
 
 		# INSTANTIATE STRATEGY
-		strategy = Strategy(prices, backtestPositions, priceQueue, backtestSettings)
+		strategy = Strategy(prices, backtestPositions, priceQueue, backtestSettings, strategySettings)
 
 		# LOOP THROUGH PRICES
 		i = 0											# for displaying trades in a scatterplot

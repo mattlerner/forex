@@ -5,7 +5,7 @@ from scipy import stats
 
 # strategy class
 class Strategy:
-	def __init__(self, prices, positions, priceQueue, settings):
+	def __init__(self, prices, positions, priceQueue, backtestSettings, strategySettings):
 		#self.candles = prices.prices(pricePeriod)
 		self.positions = positions
 		self.i = 0
@@ -58,7 +58,8 @@ class Strategy:
 		print "checkTrend: ", np.mean(np.diff(queueAsList))
 		return np.mean(np.diff(queueAsList))
 
-	def longTrend(self, currentQueue, queueLength):
+	def longTrend(self, currentQueue, queueLength=strategySettings["queuePeriod"]):
+		longerPeriod = 4 * queueLength
 		print "whatever"
 
 
@@ -84,8 +85,8 @@ class Strategy:
 		#print "lowerBand: ", lowerBand
 		#print "avg: ", lastItem["avg"]
 		#print "lastItem SD: ", lastItem["sd"]
-		uptrend = (1 if lastItem["avg"] - firstItem["avg"] > (1*lastItem["sd"]) else 0)
-		downtrend = (1 if firstItem["avg"] - lastItem["avg"] > (1*lastItem["sd"]) else 0)
+		uptrend = (1 if lastItem["avg"] - firstItem["avg"] > (0.5*lastItem["sd"]) else 0)
+		downtrend = (1 if firstItem["avg"] - lastItem["avg"] > (0.5*lastItem["sd"]) else 0)
 		#display.drawGraph(self.i, upperBand, lastPrice, lowerBand)
 		self.i = self.i + 1
 
@@ -102,7 +103,6 @@ class Strategy:
 				signal = "buy"
 				stopLoss = lastPrice - (1.5*lastItem["sd"])
 				takeProfit = lastItem["avg"]# + lastItem["sd"]# + (2*lastItem["sd"])
-		settings["lastStopLoss"] = ""
 
 		if signal:
 			print signal
