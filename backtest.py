@@ -9,11 +9,12 @@ def groupResample(year, startMonth, endMonth, resamplePeriod, currency):
 	arrayOfDataframes = []
 	while (ind):
 		filename = "historical/" + currency + "_" + str(year) + "_" + str(currentMonth) + "-Week" + str(currentWeek) + ".csv"
-
+		print "TRY: ", filename
 		try:
-			df = pandas.read_csv(filename, parse_dates={'DateTime'}, index_col='DateTime', names=['Tid', 'Dealable', 'Pair', 'DateTime', 'Buy', 'Sell'], header=1, date_parser=Backtest.parse)
+			df = pandas.read_csv(filename, parse_dates={'DateTime'}, index_col='DateTime', names=['Tid', 'Dealable', 'Pair', 'DateTime', 'Buy', 'Sell'], header=1, date_parser=parse)
 			print filename
-		except:
+		except Exception, e:
+			print "EXCEPTION: ", e
 			ind = (currentMonth != endMonth)
 			currentMonth = currentMonth + 1
 			currentWeek = 1
@@ -27,8 +28,17 @@ def groupResample(year, startMonth, endMonth, resamplePeriod, currency):
 		arrayOfDataframes.append(grouped_data)
 		currentWeek = currentWeek + 1
 	final = pandas.concat(arrayOfDataframes)
-	response = final.to_pickle("historical/"+currency+"_"+str(year)+"_"+str(startMonth)+"_through_"+str(endMonth)+".pkl")
+	response = final.to_pickle("historical/"+currency+"_"+str(year)+"_"+str(startMonth)+"_through_"+str(endMonth)+"_"+resamplePeriod+".pkl")
 	return response
+
+# parse datetimes
+def parse(datetime):
+	for fmt in ('%Y-%m-%d %H:%M:%S.%f000000', '%Y-%m-%d %H:%M:%S'):
+		try:
+			return pandas.datetime.strptime(datetime, fmt)
+		except ValueError:
+			pass
+	raise ValueError('no valid date format found')
 
 # backtest class
 class Backtest:

@@ -1,6 +1,7 @@
 import Queue
 import numpy as np
 from plot import doFigure
+from scipy import stats
 
 # strategy class
 class Strategy:
@@ -52,6 +53,15 @@ class Strategy:
 		queueAsList=list(currentQueue.queue)
 		return queueAsList[0]
 
+	def checkTrend(self, currentQueue):
+		queueAsList=list(x["price"] for x in list(currentQueue.queue))
+		print "checkTrend: ", np.mean(np.diff(queueAsList))
+		return np.mean(np.diff(queueAsList))
+
+	def longTrend(self, currentQueue, queueLength):
+		print "whatever"
+
+
 	# bollinger strategy: purchase at the 2*sd with a take profit at the 20-period MA.
 	# set a stop loss 1/2 sd beyond the 2*sd line. if the stop loss is triggered, enter
 	# a trade as soon as the price crosses the sd line again. USE LIMIT ORDERS and perhaps
@@ -74,8 +84,8 @@ class Strategy:
 		#print "lowerBand: ", lowerBand
 		#print "avg: ", lastItem["avg"]
 		#print "lastItem SD: ", lastItem["sd"]
-		uptrend = (1 if lastPrice - firstItem["price"] > (2*lastItem["sd"]) else 0)
-		downtrend = (1 if firstItem["price"] - lastPrice > (2*lastItem["sd"]) else 0)
+		uptrend = (1 if lastItem["avg"] - firstItem["avg"] > (2*lastItem["sd"]) else 0)
+		downtrend = (1 if lastItem["avg"] - lastItem["avg"] > (2*lastItem["sd"]) else 0)
 		display.drawGraph(self.i, upperBand, lastPrice, lowerBand)
 		self.i = self.i + 1
 
@@ -84,15 +94,19 @@ class Strategy:
 			signal = backtest.checkPrice(lastPriceArray, backtest.checkOpen())	# also adjust open positions
 
 		if not tradeOpen:	# open conditions
-			if (lastPrice > upperBand):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
+			if (lastPrice >= upperBand and not uptrend):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
 				signal = "sell"
 				stopLoss = lastPrice + (1.5*lastItem["sd"])
-				takeProfit = lastItem["avg"] - (2*lastItem["sd"])
-			elif (lastPrice < lowerBand):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
+				takeProfit = lastItem["avg"]# + lastItem["sd"]# - (2*lastItem["sd"])
+			elif (lastPrice <= lowerBand and not downtrend):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
 				signal = "buy"
 				stopLoss = lastPrice - (1.5*lastItem["sd"])
-				takeProfit = lastItem["avg"] + (2*lastItem["sd"])
+				takeProfit = lastItem["avg"]# + lastItem["sd"]# + (2*lastItem["sd"])
 		settings["lastStopLoss"] = ""
+
+		if signal:
+			print signal
+			display.drawLine(self.i, signal)
 
 		signalArray = {"signal":signal,"stopLoss":stopLoss,"takeProfit":takeProfit}
 		return signalArray

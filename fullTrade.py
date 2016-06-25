@@ -45,7 +45,7 @@ backtestPositions =	{"buy": 0, "sell": 0}
 
 # STORE ALL STRATEGY SETTINGS HERE
 strategySettings = {
-	"queuePeriod":50
+	"queuePeriod":20
 }
 
 #GLOBALS
@@ -73,6 +73,7 @@ sleepPlus = 0
 
 #Declare the queue that will store prices
 priceQueue = Queue.Queue()
+longQueue = Queue.Queue()
 
 #For backtest: Instantiate matPlotLib figure
 display = doFigure()
@@ -86,12 +87,12 @@ if __name__ == "__main__":
 		#exit()
 
 		#GROUP RESAMPLE TO PICKLE
-		#groupResample(2015, 1, 12, "1Min", "EUR_USD")
+		#groupResample(2015, 1, 6, "1H", "EUR_USD")
 		#exit()
 
 		# READ PICKLE INTO DATAFRAME (prices)
 		#backtest =  Backtest("historical/EUR_USD_Week3.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
-		backtest = Backtest("historical/EUR_USD_2016_1_through_2.pkl",backtestSettings,leverage,backtestPositions)
+		backtest = Backtest("historical/EUR_USD_2015_1_through_6_1H.pkl",backtestSettings,leverage,backtestPositions)
 		#backtest =  Backtest("historical/EUR_USD_2015_1_through_12.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
 		prices = backtest.readPickle()
 
