@@ -35,7 +35,12 @@ backtestPositions =	{"buy": 0, "sell": 0}
 
 # STORE ALL STRATEGY SETTINGS HERE
 strategySettings = {
-	"queuePeriod":20
+	"queuePeriod":20,
+	"longQueuePeriod":5
+}
+
+strategyVariables = {
+	"var1":0
 }
 
 #GLOBALS
@@ -64,6 +69,9 @@ sleepPlus = 0
 #Declare the queue that will store prices
 priceQueue = Queue.Queue()
 longQueue = Queue.Queue()
+
+# Create a dataframe to store price and order data
+info = pandas.DataFrame(columns=["price","orderType","stopLoss","takeProfit","cash","instruments","cashChange"])
 
 #For backtest: Instantiate matPlotLib figure
 display = doFigure()
@@ -99,6 +107,8 @@ if __name__ == "__main__":
 
 			# 0.A: ADD CURRENT PRICE TO QUEUE
 			priceQueue = strategy.doQueue(priceQueue,strategySettings["queuePeriod"],row)	# add current price to queue, along with stats
+			longQueue = strategy.doQueue(priceQueue,strategySettings["longQueuePeriod"],row)# add current price to queue, along with stats
+
 
 			# 1.A: CHECK IF TRADE IS OPEN
 			tradeOpen = strategy.checkOpen()
@@ -106,16 +116,32 @@ if __name__ == "__main__":
 			# 1.B: CHECK CLOSE CONDITIONS
 
 			# 2.A: STRATEGY:
-			signal = strategy.bollinger(row, priceQueue, backtestSettings, backtest.checkOpen(), display, backtest)	# check for buy/sell signals
-			if signal and i >= strategySettings["queuePeriod"]:
-				print "SIGNAL: ", signal
+			signal = strategy.bollinger(row, priceQueue, longQueue, backtestSettings, backtest.checkOpen(), display, backtest)	# check for buy/sell signals
+			if signal["signal"] and i >= strategySettings["queuePeriod"]:
 				backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], backtestSettings["leverage"])
+				print backtest.account
 			else:
 				pass
 
 			i = i + 1 									# increment loop for scaterplot
-			time.sleep(0.001)							# give some time to process
-			print backtest.account
+
+			infoRow = {
+				"price":(row["Buy"] + row["Sell"]) / 2,
+				"orderType":signal["signal"],
+				"stopLoss":backtest.backtestSettings["stopLoss"],
+				"takeProfit":backtest.backtestSettings["takeProfit"],
+				"cash":backtest.account["cash"],
+				"instruments":backtest.account["instruments"]
+			}
+
+			infoRowFrame = pandas.DataFrame(data=infoRow, index=[0])
+
+			info = info.append(infoRowFrame)
+
+			#time.sleep(0.001)							# give some time to process
+			#print backtest.account
+		result = info.to_pickle("results.pkl")
+		print info
 
 	elif liveIndicator:
 		print " *** LIVE TRADING ***"					# live trading

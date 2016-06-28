@@ -9,10 +9,10 @@ def groupResample(year, startMonth, endMonth, resamplePeriod, currency):
 	arrayOfDataframes = []
 	while (ind):
 		filename = "historical/" + currency + "_" + str(year) + "_" + str(currentMonth) + "-Week" + str(currentWeek) + ".csv"
-		print "TRY: ", filename
+		#print "TRY: ", filename
 		try:
 			df = pandas.read_csv(filename, parse_dates={'DateTime'}, index_col='DateTime', names=['Tid', 'Dealable', 'Pair', 'DateTime', 'Buy', 'Sell'], header=1, date_parser=parse)
-			print filename
+			#print filename
 		except Exception, e:
 			print "EXCEPTION: ", e
 			ind = (currentMonth != endMonth)
