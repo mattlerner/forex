@@ -85,12 +85,15 @@ class Strategy:
 		firstItem = self.returnFirstQueueItem(currentQueue)
 		upperBand = lastItem["avg"] + (2 * lastItem["sd"])
 		lowerBand = lastItem["avg"] - (2 * lastItem["sd"])
+		self.upperBand = upperBand
+		self.lowerBand = lowerBand
+		self.movingAverage = lastItem["avg"]
 		#print "upperBand: ", upperBand
 		#print "lowerBand: ", lowerBand
 		#print "avg: ", lastItem["avg"]
 		#print "lastItem SD: ", lastItem["sd"]
-		uptrend = (1 if lastItem["avg"] - firstItem["price"] > (0.5*lastItem["sd"]) else 0)
-		downtrend = (1 if firstItem["price"] - lastItem["avg"] > (0.5*lastItem["sd"]) else 0)
+		uptrend = (1 if lastItem["avg"] - firstItem["price"] > (1*lastItem["sd"]) else 0)
+		downtrend = (1 if firstItem["price"] - lastItem["avg"] > (1*lastItem["sd"]) else 0)
 		display.drawGraph(self.i, upperBand, lastPrice, lowerBand)
 		self.i = self.i + 1
 

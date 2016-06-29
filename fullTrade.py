@@ -71,7 +71,7 @@ priceQueue = Queue.Queue()
 longQueue = Queue.Queue()
 
 # Create a dataframe to store price and order data
-info = pandas.DataFrame(columns=["price","orderType","stopLoss","takeProfit","cash","instruments","cashChange"])
+info = pandas.DataFrame(columns=["price","orderType","stopLoss","takeProfit","cash","instruments","cashChange","upperBand","lowerBand","movingAverage"])
 
 #For backtest: Instantiate matPlotLib figure
 display = doFigure()
@@ -107,8 +107,6 @@ if __name__ == "__main__":
 
 			# 0.A: ADD CURRENT PRICE TO QUEUE
 			priceQueue = strategy.doQueue(priceQueue,strategySettings["queuePeriod"],row)	# add current price to queue, along with stats
-			longQueue = strategy.doQueue(priceQueue,strategySettings["longQueuePeriod"],row)# add current price to queue, along with stats
-
 
 			# 1.A: CHECK IF TRADE IS OPEN
 			tradeOpen = strategy.checkOpen()
@@ -125,16 +123,25 @@ if __name__ == "__main__":
 
 			i = i + 1 									# increment loop for scaterplot
 
+			try:
+				lastCash = info["cash"][i-1]
+			except:
+				lastCash = 0
+
 			infoRow = {
 				"price":(row["Buy"] + row["Sell"]) / 2,
 				"orderType":signal["signal"],
 				"stopLoss":backtest.backtestSettings["stopLoss"],
 				"takeProfit":backtest.backtestSettings["takeProfit"],
 				"cash":backtest.account["cash"],
-				"instruments":backtest.account["instruments"]
+				"instruments":backtest.account["instruments"],
+				"cashChange":backtest.account["cash"] - lastCash,
+				"upperBand":strategy.upperBand,
+				"lowerBand":strategy.lowerBand,
+				"movingAverage":strategy.movingAverage
 			}
 
-			infoRowFrame = pandas.DataFrame(data=infoRow, index=[0])
+			infoRowFrame = pandas.DataFrame(data=infoRow, index=[i])
 
 			info = info.append(infoRowFrame)
 
