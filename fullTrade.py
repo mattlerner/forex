@@ -35,8 +35,8 @@ backtestPositions =	{"buy": 0, "sell": 0}
 
 # STORE ALL STRATEGY SETTINGS HERE
 strategySettings = {
-	"queuePeriod":20,
-	"longQueuePeriod":5
+	"queuePeriod":10,
+	"longQueuePeriod":50
 }
 
 strategyVariables = {
@@ -71,7 +71,7 @@ priceQueue = Queue.Queue()
 longQueue = Queue.Queue()
 
 # Create a dataframe to store price and order data
-info = pandas.DataFrame(columns=["price","orderType","stopLoss","takeProfit","cash","instruments","cashChange","upperBand","lowerBand","movingAverage"])
+info = pandas.DataFrame(columns=["price","orderType","stopLoss","takeProfit","cash","instruments","cashChange","upperBand","lowerBand","movingAverage","sd"])
 
 #For backtest: Instantiate matPlotLib figure
 display = doFigure()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
 		# READ PICKLE INTO DATAFRAME (prices)
 		#backtest =  Backtest("historical/EUR_USD_Week3.csv_1Min-OHLC.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
-		backtest = Backtest("historical/EUR_USD_2015_1_through_6_1H.pkl",backtestSettings,leverage,backtestPositions)
+		backtest = Backtest("historical/EUR_USD_2015_1_through_12.pkl",backtestSettings,leverage,backtestPositions)
 		#backtest =  Backtest("historical/EUR_USD_2015_1_through_12.pkl",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
 		prices = backtest.readPickle()
 
@@ -107,6 +107,7 @@ if __name__ == "__main__":
 
 			# 0.A: ADD CURRENT PRICE TO QUEUE
 			priceQueue = strategy.doQueue(priceQueue,strategySettings["queuePeriod"],row)	# add current price to queue, along with stats
+			longQueue = strategy.doQueue(longQueue,strategySettings["longQueuePeriod"],row)	# add current price to queue, along with stats
 
 			# 1.A: CHECK IF TRADE IS OPEN
 			tradeOpen = strategy.checkOpen()
@@ -114,7 +115,7 @@ if __name__ == "__main__":
 			# 1.B: CHECK CLOSE CONDITIONS
 
 			# 2.A: STRATEGY:
-			signal = strategy.bollinger(row, priceQueue, longQueue, backtestSettings, backtest.checkOpen(), display, backtest)	# check for buy/sell signals
+			signal = strategy.maCross(row, priceQueue, longQueue, backtestSettings, backtest.checkOpen(), display, backtest)	# check for buy/sell signals
 			if signal["signal"] and i >= strategySettings["queuePeriod"]:
 				backtest.executeTrade(signal["signal"], row, signal["stopLoss"], signal["takeProfit"], backtestSettings["leverage"])
 				print backtest.account
@@ -136,9 +137,10 @@ if __name__ == "__main__":
 				"cash":backtest.account["cash"],
 				"instruments":backtest.account["instruments"],
 				"cashChange":backtest.account["cash"] - lastCash,
-				"upperBand":strategy.upperBand,
-				"lowerBand":strategy.lowerBand,
-				"movingAverage":strategy.movingAverage
+				#"upperBand":strategy.upperBand,
+				#"lowerBand":strategy.lowerBand,
+				"movingAverage":strategy.movingAverage,
+				"sd":strategy.sd
 			}
 
 			infoRowFrame = pandas.DataFrame(data=infoRow, index=[i])
@@ -146,7 +148,8 @@ if __name__ == "__main__":
 			info = info.append(infoRowFrame)
 
 			#time.sleep(0.001)							# give some time to process
-			#print backtest.account
+			print backtest.account
+			print backtest.positions
 		result = info.to_pickle("results.pkl")
 		print info
 

@@ -11,8 +11,8 @@ class doFigure(object):
 		self.priceY = list()
 		self.upperY = list()
 		self.lowerY = list()
-		#plt.show()
-		#plt.ion()
+		plt.show()
+		plt.ion()
 		plt.close(fig)
 
 	def drawGraph(self, priceXvalue, priceYvalue, lowerYvalue, upperYvalue):
@@ -23,9 +23,9 @@ class doFigure(object):
 		plt.plot(priceXvalue, upperYvalue, '.r-')
 		plt.plot(priceXvalue, priceYvalue, '.b-')
 		plt.plot(priceXvalue, lowerYvalue, '.g-')
-		#plt.draw()
-		#plt.show()
-		#plt.pause(0.0001)
+		plt.draw()
+		plt.show()
+		plt.pause(0.0001)
 
 	def drawCashGraph(self, accountXvalue, accountYvalue):
 		self.priceX.append(accountXvalue)
