@@ -1,4 +1,5 @@
 import httplib
+import urllib
 import json
 
 class restConnect(object):
@@ -13,7 +14,7 @@ class restConnect(object):
 
 	def prices(self, period):
 		conn = httplib.HTTPSConnection(self.domain)
-		url = ''.join(["/v1/candles?count=", str(period + 1), "&instrument=", self.instrument, "&granularity=", str(self.granularity), "&candleFormat=midpoint"])
+		url = ''.join(["/v1/candles?count=", str(period), "&instrument=", self.instrument, "&granularity=", str(self.granularity), "&candleFormat=midpoint"])
 		conn.request("GET",url)
 		resp = json.loads(conn.getresponse().read())
 		candles = resp['candles']
@@ -26,7 +27,7 @@ class restConnect(object):
 			"Authorization": "Bearer " + self.access_token
 		}
 		params = urllib.urlencode({
-			"instrument" : instrument
+			"instrument" : self.instrument
 		})
 		conn.request(
 			"GET",

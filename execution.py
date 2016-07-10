@@ -1,3 +1,7 @@
+import httplib
+import urllib
+import json
+
 class Execution(object):
 	def __init__(self, domain, access_token, account_id):
 		self.domain = domain
@@ -18,7 +22,7 @@ class Execution(object):
 			"units" : event.units,
 			"type" : event.order_type,
 			"side" : event.side,
-			"trailingStop": event.trailingStop,
+			"stopLoss": event.stopLoss,
 			"takeProfit": event.takeProfit
 		})
 		self.conn.request(

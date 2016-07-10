@@ -5,7 +5,7 @@ from scipy import stats
 
 # strategy class
 class Strategy:
-	def __init__(self, prices, positions, priceQueue, backtestSettings, strategySettings):
+	def __init__(self, positions, priceQueue, backtestSettings, strategySettings):
 		#self.candles = prices.prices(pricePeriod)
 		self.positions = positions
 		self.i = 0
@@ -29,7 +29,7 @@ class Strategy:
 		price = (row['Buy'] + row['Sell']) / 2 # using the average of bid/ask as the historical price
 		spread = abs(row['Buy'] - row['Sell'])
 		stats = self.queueStats(queue)
-		print "avgSd: ", stats["avgSd"]
+		#print "avgSd: ", stats["avgSd"]
 		array = {"price":price,"sd":stats["sd"],"avg":stats["avg"],"spread":spread,"avgSd":stats["avgSd"]}
 		queue.put(array)
 		if (queue.qsize() > queueLength):
@@ -83,7 +83,8 @@ class Strategy:
 	# Don't buy when the market is downtrending > x
 	# Don't sell when the market is uptrending > y
 	# reverse trade if stoploss is triggered
-	def bollinger(self, lastPriceArray, currentQueue, longQueue, settings, tradeOpen, display, backtest):
+#	def bollinger(self, lastPriceArray, currentQueue, longQueue, settings, tradeOpen, display, backtest):
+	def bollinger(self, lastPriceArray, currentQueue, longQueue, settings, tradeOpen):
 		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
 		settings["units"] = (settings["tradeAmount"] / lastPrice) *	 settings["leverage"]
 		signal = ""
@@ -131,9 +132,9 @@ class Strategy:
 		return signalArray
 
 	# maCrossStrategy
-	def maCross(self, lastPriceArray, currentQueue, longQueue, settings, tradeOpen, display, backtest):
+	def maCross(self, lastPriceArray, currentQueue, longQueue, settings, tradeOpen):
 		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
-		settings["units"] = (settings["tradeAmount"] / lastPrice) *	 settings["leverage"]
+		#settings["units"] = (settings["tradeAmount"] / lastPrice) *	 settings["leverage"]
 		signal = ""
 		stopLoss = 0
 		takeProfit = 0
@@ -145,7 +146,7 @@ class Strategy:
 		twoBackLong = self.returnQueueItemByIndex(longQueue, -2)
 		self.movingAverage = lastItem["avg"]
 		self.sd = lastItem["sd"]
-		print "Range: ", self.returnQueueRange(longQueue)
+		#print "Range: ", self.returnQueueRange(longQueue)
 		lowRange = (1 if self.returnQueueRange(longQueue) < 0.0025 else 0)
 		spreadOkay = (1 if lastItem["spread"] < 0.00004 else 0)
 		uptrend = (1 if lastItemLongQueue["avg"] - twoBackLong["avg"] > (1*twoBackLong["sd"]) else 0)
@@ -155,20 +156,21 @@ class Strategy:
 		self.i = self.i + 1
 
 		if not tradeOpen:	# open conditions
-			if (lastItem["avg"] < lastItemLongQueue["avg"] and twoBackShort["avg"] > twoBackLong["avg"] and (lowVolatility and spreadOkay and not uptrend) or lowRange):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
+			#settings["tradeAmount"] = backtest.account["cash"] * 0.2
+			if (lastItem["avg"] < lastItemLongQueue["avg"] and twoBackShort["avg"] > twoBackLong["avg"] and (lowVolatility and spreadOkay and not uptrend and lowRange)):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
 				signal = "sell"
-				stopLoss = lastPrice + (0.5*lastItem["sd"])
+				stopLoss = lastPrice + (1.5*lastItem["sd"])#(0.5*lastItem["sd"])
 				takeProfit = lastItem["avg"] - (4*lastItem["sd"])
-			elif (lastItem["avg"] > lastItemLongQueue["avg"] and twoBackShort["avg"] < twoBackLong["avg"] and (lowVolatility and spreadOkay and not downtrend) or lowRange):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
+			elif (lastItem["avg"] > lastItemLongQueue["avg"] and twoBackShort["avg"] < twoBackLong["avg"] and (lowVolatility and spreadOkay and not downtrend and lowRange)):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
 				signal = "buy"
-				stopLoss = lastPrice - (0.5*lastItem["sd"])
+				stopLoss = lastPrice - (1.5*lastItem["sd"])#(0.5*lastItem["sd"])
 				takeProfit = lastItem["avg"] + (4*lastItem["sd"])
 
 		# BACKTEST ONLY
-		if tradeOpen:
-			signal = backtest.checkPrice(lastPriceArray, backtest.checkOpen())	# also adjust open positions
+		#if tradeOpen:
+		#	signal = backtest.checkPrice(lastPriceArray, backtest.checkOpen())	# also adjust open positions
 
-		signalArray = {"signal":signal,"stopLoss":stopLoss,"takeProfit":takeProfit}
+		signalArray = {"signal":signal,"stopLoss":round(stopLoss,5),"takeProfit":round(takeProfit,5)}
 
 		if signal:
 			print signalArray

@@ -3,6 +3,7 @@ import time
 import warnings
 from settings import STREAM_DOMAIN, API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID
 from priceStream import StreamingForexPrices
+from restConnect import restConnect
 import httplib
 import json
 import numpy as np
@@ -16,8 +17,8 @@ from events import tradeEvent
 from strategy import Strategy
 
 # TOGGLES
-backtestIndicator = True # are we backtesting?
-liveIndicator = False	# are we trading live?
+backtestIndicator = False # are we backtesting?
+liveIndicator = True	# are we trading live?
 
 # LIVE STARTING VARIABLES
 # NOTE: Make sure these match the actual state of the account!
@@ -35,7 +36,7 @@ backtestPositions =	{"buy": 0, "sell": 0}
 
 # STORE ALL STRATEGY SETTINGS HERE
 strategySettings = {
-	"queuePeriod":10,
+	"queuePeriod":5,
 	"longQueuePeriod":50
 }
 
@@ -77,7 +78,7 @@ info = pandas.DataFrame(columns=["price","orderType","stopLoss","takeProfit","ca
 display = doFigure()
 
 if __name__ == "__main__":
-	if backtestIndicator:								# conduct backtest
+	if backtestIndicator and not liveIndicator:								# conduct backtest
 		print " *** BACKTEST *** "
 		#CONVERT DATA TO PICKLE
 		#backTest = Backtest("historical/EUR_USD_Week3.csv",backtestSettings,leverage,closeDictionary,backtestSettings['positions'])
@@ -95,7 +96,7 @@ if __name__ == "__main__":
 		prices = backtest.readPickle()
 
 		# INSTANTIATE STRATEGY
-		strategy = Strategy(prices, backtestPositions, priceQueue, backtestSettings, strategySettings)
+		strategy = Strategy(backtestPositions, priceQueue, backtestSettings, strategySettings)
 
 		# LOOP THROUGH PRICES
 		i = 0											# for displaying trades in a scatterplot
@@ -153,5 +154,50 @@ if __name__ == "__main__":
 		result = info.to_pickle("results.pkl")
 		print info
 
-	elif liveIndicator:
-		print " *** LIVE TRADING ***"					# live trading
+	elif liveIndicator and not backtestIndicator:
+
+		# DEFINE CONNECTION
+		connection = restConnect(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID, "EUR_USD", "S5")
+
+		# INSTANTIATE STRATEGY
+		strategy = Strategy(connection.positions(), priceQueue, backtestSettings, strategySettings)
+
+		# PREPARE TRADE EXECUTION
+		execution = Execution(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID)
+
+		while True:
+			prices = connection.prices(1)
+			for rawRow in prices:
+
+				# FORMAT ROW FOR STRATEGY
+				# THIS IS A HACK
+				row = {}
+				row["Buy"] = rawRow["closeMid"]
+				row["Sell"] = rawRow["closeMid"]
+
+				print row, "\n"
+
+				# 0.A: ADD CURRENT PRICE TO QUEUE
+				priceQueue = strategy.doQueue(priceQueue,strategySettings["queuePeriod"],row)	# add current price to queue, along with stats
+				longQueue = strategy.doQueue(longQueue,strategySettings["longQueuePeriod"],row)	# add current price to queue, along with stats
+
+			#CHECK OPEN POSITIONS
+			tradeOpen = strategy.checkOpen()
+			print "tradeOpen: ", tradeOpen
+
+			# 2.A: STRATEGY:
+			signal = strategy.maCross(row, priceQueue, longQueue, backtestSettings, tradeOpen)	# check for buy/sell signals
+
+			if signal["signal"] and not tradeOpen:
+				event = tradeEvent("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"])
+				try:
+					execute = execution.execute_order(event)
+					print execute
+				except:
+					print "there was an error!"
+			else:
+				pass
+
+			time.sleep(5)
+
+		#print " *** LIVE TRADING ***"					# live trading
