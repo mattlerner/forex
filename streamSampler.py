@@ -18,6 +18,7 @@ allTicks = allTicks.set_index('RateDateTime')
 resampled = pandas.DataFrame()
 
 timeFrame = 50
+shortTimeFrame = 5
 
 # main function
 if __name__ == "__main__":
@@ -30,9 +31,10 @@ if __name__ == "__main__":
 		varNames = next(reader)							# this array is the first CSV row, e.h. varnames
 		for row in reader:
 
+			# make dictionary out of CSV rows
 			currentDict = dict(zip(varNames,row)) 		# declare dictionary of keys and values
 
-			# remove columns we DGAF about
+			# remove columns we DGAF about - change for live trading
 			del currentDict['cDealable']
 			del currentDict['CurrencyPair']
 			del currentDict['lTid']
@@ -44,14 +46,24 @@ if __name__ == "__main__":
 			currentSeries = pandas.Series(data=currentDict)
 			currentSeries['RateDateTime'] = pandas.to_datetime(currentSeries['RateDateTime'])
 
-			allTicks.loc[currentSeries['RateDateTime']] = currentSeries	# add current row to allTicks dataframe
+			# add current row to allTicks dataframe
+			allTicks.loc[currentSeries['RateDateTime']] = currentSeries
 
-
+			# create time frames
 			timeFrameTime = currentSeries['RateDateTime'] - datetime.timedelta(minutes=timeFrame)
+			shortFrameTime = currentSeries['RateDateTime'] - datetime.timedelta(minutes=shortTimeFrame)
+
+			#create dataframes within given time frames
 			allTicks = allTicks[allTicks.index > timeFrameTime]
+			shortTicks = allTicks[allTicks.index > shortFrameTime]
 
-			print allTicks.index
+			#averages
+			longAverage = allTicks["Avg"].mean()
+			shortAverage = shortTicks["Avg"].mean()
 
+			print "longAverage: ", longAverage
+			print "shortAverage: ", shortAverage
+			print "\n"
 			#resampled = resample("1Min",allTicks)
 	finally:
 		f.close()
