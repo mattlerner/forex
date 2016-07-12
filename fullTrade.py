@@ -157,13 +157,10 @@ if __name__ == "__main__":
 	elif liveIndicator and not backtestIndicator:
 
 		# DEFINE CONNECTION
-		connection = restConnect(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID, "EUR_USD", "M1")
+		connection = restConnect(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID, "EUR_USD", "S5")
 
 		# INSTANTIATE STRATEGY
 		strategy = Strategy(connection.positions(), priceQueue, backtestSettings, strategySettings)
-
-		# PREPARE TRADE EXECUTION
-		execution = Execution(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID)
 
 		while True:
 			prices = connection.prices(1)
@@ -194,6 +191,8 @@ if __name__ == "__main__":
 				event = tradeEvent("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"])
 				#event = tradeEventLimit("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"],signal["lastPrice"])
 				try:
+					# PREPARE TRADE EXECUTION
+					execution = Execution(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID)
 					execute = execution.execute_order(event)
 					print execute
 				except Exception, e:
@@ -203,6 +202,6 @@ if __name__ == "__main__":
 			else:
 				pass
 
-			time.sleep(60)
+			time.sleep(5)
 
 		#print " *** LIVE TRADING ***"					# live trading

@@ -1,6 +1,7 @@
 import pandas
 import csv
 import numpy
+import datetime
 
 def parse(datetime):
 	for fmt in ('%Y-%m-%d %H:%M:%S.%f000000', '%Y-%m-%d %H:%M:%S'):
@@ -52,8 +53,15 @@ if __name__ == "__main__":
 
 			allTicks.loc[currentSeries['RateDateTime']] = currentSeries	# add current row to allTicks dataframe
 
-			if len(allTicks) > 100:
-				resampled = resample("1Min",allTicks)
+			#currentHour = currentSeries['RateDateTime'].hour
+			#currentMinute = currentSeries['RateDateTime'].minute
+			fiftyMinutesAgo = currentSeries['RateDateTime'] - datetime.timedelta(minutes=50)
+			allTicks = allTicks[allTicks.index > fiftyMinutesAgo]
+
+			print allTicks.index
+
+			#if len(allTicks) > 100:
+			#	resampled = resample("1Min",allTicks)
 	finally:
 		f.close()
 	print allTicks.values
