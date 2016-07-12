@@ -3,13 +3,6 @@ import csv
 import numpy
 import datetime
 
-def parse(datetime):
-	for fmt in ('%Y-%m-%d %H:%M:%S.%f000000', '%Y-%m-%d %H:%M:%S'):
-		try:
-			return pandas.datetime.strptime(datetime, fmt)
-		except ValueError:
-			pass
-	raise ValueError('no valid date format found')
 
 # resamble tick data
 def resample(resamplePeriod, df):
@@ -22,9 +15,9 @@ allTicks = pandas.DataFrame(columns=('RateDateTime','RateAsk','RateBid','Avg'), 
 allTicks['RateDateTime'] = pandas.to_datetime(allTicks['RateDateTime'])
 allTicks = allTicks.set_index('RateDateTime')
 
-print allTicks.columns
-
 resampled = pandas.DataFrame()
+
+timeFrame = 50
 
 # main function
 if __name__ == "__main__":
@@ -53,15 +46,13 @@ if __name__ == "__main__":
 
 			allTicks.loc[currentSeries['RateDateTime']] = currentSeries	# add current row to allTicks dataframe
 
-			#currentHour = currentSeries['RateDateTime'].hour
-			#currentMinute = currentSeries['RateDateTime'].minute
-			fiftyMinutesAgo = currentSeries['RateDateTime'] - datetime.timedelta(minutes=50)
-			allTicks = allTicks[allTicks.index > fiftyMinutesAgo]
+
+			timeFrameTime = currentSeries['RateDateTime'] - datetime.timedelta(minutes=timeFrame)
+			allTicks = allTicks[allTicks.index > timeFrameTime]
 
 			print allTicks.index
 
-			#if len(allTicks) > 100:
-			#	resampled = resample("1Min",allTicks)
+			#resampled = resample("1Min",allTicks)
 	finally:
 		f.close()
 	print allTicks.values
