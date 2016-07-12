@@ -159,21 +159,23 @@ class Strategy:
 			#settings["tradeAmount"] = backtest.account["cash"] * 0.2
 			if (lastItem["avg"] < lastItemLongQueue["avg"] and twoBackShort["avg"] > twoBackLong["avg"] and (lowVolatility and spreadOkay and not uptrend and lowRange)):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
 				signal = "sell"
-				stopLoss = lastPrice + (1.5*lastItem["sd"])#(0.5*lastItem["sd"])
-				takeProfit = lastItem["avg"] - (4*lastItem["sd"])
+				stopLoss = lastPrice + (2.5*lastItem["sd"])#(0.5*lastItem["sd"])
+				takeProfit = lastItem["avg"] - (5*lastItem["sd"])
 			elif (lastItem["avg"] > lastItemLongQueue["avg"] and twoBackShort["avg"] < twoBackLong["avg"] and (lowVolatility and spreadOkay and not downtrend and lowRange)):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
 				signal = "buy"
-				stopLoss = lastPrice - (1.5*lastItem["sd"])#(0.5*lastItem["sd"])
-				takeProfit = lastItem["avg"] + (4*lastItem["sd"])
+				stopLoss = lastPrice - (2.5*lastItem["sd"])#(0.5*lastItem["sd"])
+				takeProfit = lastItem["avg"] + (5*lastItem["sd"])
 
 		# BACKTEST ONLY
 		#if tradeOpen:
 		#	signal = backtest.checkPrice(lastPriceArray, backtest.checkOpen())	# also adjust open positions
 
-		signalArray = {"signal":signal,"stopLoss":round(stopLoss,5),"takeProfit":round(takeProfit,5)}
+		signalArray = {"signal":signal,"stopLoss":round(stopLoss,5),"takeProfit":round(takeProfit,5),"lastPrice":round(lastPrice,5)}
+
+		print "signalArray: ", signalArray
 
 		if signal:
-			print signalArray
+			print ""
 			#display.drawLine(self.i, signal)
 
 		return signalArray

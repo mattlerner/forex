@@ -13,7 +13,7 @@ import pandas
 from plot import doFigure
 from execution import Execution
 from backtest import Backtest, groupResample
-from events import tradeEvent
+from events import tradeEvent, tradeEventLimit
 from strategy import Strategy
 
 # TOGGLES
@@ -157,7 +157,7 @@ if __name__ == "__main__":
 	elif liveIndicator and not backtestIndicator:
 
 		# DEFINE CONNECTION
-		connection = restConnect(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID, "EUR_USD", "S5")
+		connection = restConnect(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID, "EUR_USD", "M1")
 
 		# INSTANTIATE STRATEGY
 		strategy = Strategy(connection.positions(), priceQueue, backtestSettings, strategySettings)
@@ -188,16 +188,21 @@ if __name__ == "__main__":
 			# 2.A: STRATEGY:
 			signal = strategy.maCross(row, priceQueue, longQueue, backtestSettings, tradeOpen)	# check for buy/sell signals
 
+			print signal["signal"]
+
 			if signal["signal"] and not tradeOpen:
 				event = tradeEvent("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"])
+				#event = tradeEventLimit("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"],signal["lastPrice"])
 				try:
 					execute = execution.execute_order(event)
 					print execute
-				except:
-					print "there was an error!"
+				except Exception, e:
+					print "there was an error!\n"
+					print repr(e)
+					print str(e)
 			else:
 				pass
 
-			time.sleep(5)
+			time.sleep(60)
 
 		#print " *** LIVE TRADING ***"					# live trading
