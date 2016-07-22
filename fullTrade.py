@@ -15,6 +15,8 @@ from execution import Execution
 from backtest import Backtest, groupResample
 from events import tradeEvent, tradeEventLimit
 from strategy import Strategy
+import datetime
+from datetime import datetime as dt
 
 # TOGGLES
 backtestIndicator = False # are we backtesting?
@@ -36,7 +38,7 @@ backtestPositions =	{"buy": 0, "sell": 0}
 
 # STORE ALL STRATEGY SETTINGS HERE
 strategySettings = {
-	"queuePeriod":5,
+	"queuePeriod":10,
 	"longQueuePeriod":50
 }
 
@@ -157,13 +159,19 @@ if __name__ == "__main__":
 	elif liveIndicator and not backtestIndicator:
 
 		# DEFINE CONNECTION
-		connection = restConnect(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID, "EUR_USD", "S5")
+		connection = restConnect(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID, "EUR_USD", "M1")
 
 		# INSTANTIATE STRATEGY
 		strategy = Strategy(connection.positions(), priceQueue, backtestSettings, strategySettings)
 
 		while True:
-			prices = connection.prices(1)
+
+			if priceQueue.qsize() < 1:
+				numPricesToRead = strategySettings["longQueuePeriod"]
+			else:
+				numPricesToRead = 1
+
+			prices = connection.prices(numPricesToRead)
 			for rawRow in prices:
 
 				# FORMAT ROW FOR STRATEGY
@@ -179,17 +187,19 @@ if __name__ == "__main__":
 				longQueue = strategy.doQueue(longQueue,strategySettings["longQueuePeriod"],row)	# add current price to queue, along with stats
 
 			#CHECK OPEN POSITIONS
-			tradeOpen = strategy.checkOpen()
+			tradeOpen = strategy.checkOpen(connection.positions())
 			print "tradeOpen: ", tradeOpen
 
 			# 2.A: STRATEGY:
-			signal = strategy.maCross(row, priceQueue, longQueue, backtestSettings, tradeOpen)	# check for buy/sell signals
+			signal = strategy.maCrossAnticipate(row, priceQueue, longQueue, backtestSettings, tradeOpen)	# check for buy/sell signals
 
 			print signal["signal"]
+			print connection.orders()
 
-			if signal["signal"] and not tradeOpen:
-				event = tradeEvent("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"])
-				#event = tradeEventLimit("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"],signal["lastPrice"])
+			if signal["signal"] and not tradeOpen and not connection.orders():
+				#event = tradeEvent("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"])
+				threeMinutes = dt.utcnow() + datetime.timedelta(minutes=3)
+				event = tradeEventLimit("EUR_USD", 100000, signal["signal"], signal["stopLoss"], signal["takeProfit"],signal["tradePrice"],threeMinutes.isoformat("T"),signal["upperBound"],signal["lowerBound"])
 				try:
 					# PREPARE TRADE EXECUTION
 					execution = Execution(API_DOMAIN, ACCESS_TOKEN, ACCOUNT_ID)
@@ -202,6 +212,6 @@ if __name__ == "__main__":
 			else:
 				pass
 
-			time.sleep(5)
+			time.sleep(60)
 
 		#print " *** LIVE TRADING ***"					# live trading

@@ -23,8 +23,11 @@ class Execution(object):
 			"type" : event.order_type,
 			"side" : event.side,
 			"stopLoss": event.stopLoss,
-			"takeProfit": event.takeProfit#,
-			#"price": event.price
+			"takeProfit": event.takeProfit,
+			"price": event.price,
+			"expiry": event.expiry,
+			"upperBound":event.upperBound,
+			"lowerBound":event.lowerBound
 		})
 		self.conn.request(
 			"POST",

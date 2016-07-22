@@ -41,6 +41,23 @@ class restConnect(object):
 			positions[y].append(x)
 		return positions
 
+	def orders(self):
+		conn = httplib.HTTPSConnection(self.domain)
+		headers = {
+			"Content-Type": "application/x-www-form-urlencoded",
+			"Authorization": "Bearer " + self.access_token
+		}
+		params = urllib.urlencode({
+			"instrument" : self.instrument
+		})
+		conn.request(
+			"GET",
+			"/v1/accounts/%s/orders" % str(self.account_id),
+			params, headers
+		)
+		response = json.loads(conn.getresponse().read())
+		return response['orders']
+
 	def avg(self, candles):
 		priceArray = map(lambda x: x['openMid'], candles)
 		priceAvg = np.average(priceArray)

@@ -57,13 +57,18 @@ if __name__ == "__main__":
 			allTicks = allTicks[allTicks.index > timeFrameTime]
 			shortTicks = allTicks[allTicks.index > shortFrameTime]
 
-			#averages
-			longAverage = allTicks["Avg"].mean()
-			shortAverage = shortTicks["Avg"].mean()
+			#averages - do this with bid and ask in particular
+			averages = {"RateBid":None, "RateAsk":None, "Avg":None}
 
-			print "longAverage: ", longAverage
-			print "shortAverage: ", shortAverage
-			print "\n"
+			for key, value in averages.iteritems():
+				value = allTicks[key].mean()
+
+			#longAverage = allTicks["Avg"].mean()
+			#shortAverage = shortTicks["Avg"].mean()
+
+			#print "longAverage: ", longAverage
+			#print "shortAverage: ", shortAverage
+			#print "\n"
 			#resampled = resample("1Min",allTicks)
 	finally:
 		f.close()

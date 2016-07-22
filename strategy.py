@@ -15,10 +15,10 @@ class Strategy:
 
 	# if there is an open position, returns the type of position that is open
 	# right now, we're trying to be only long or only short at any given time
-	def checkOpen(self):
+	def checkOpen(self, positions):
 		returnVar = None
-		for index in self.positions:
-			if self.positions[index]:
+		for index in positions:
+			if positions[index]:
 				returnVar = index
 			else:
 				pass
@@ -157,20 +157,76 @@ class Strategy:
 
 		if not tradeOpen:	# open conditions
 			#settings["tradeAmount"] = backtest.account["cash"] * 0.2
-			if (lastItem["avg"] < lastItemLongQueue["avg"] and twoBackShort["avg"] > twoBackLong["avg"] and (lowVolatility and spreadOkay and not uptrend and lowRange)):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
+			if (lastItem["avg"] < lastItemLongQueue["avg"] and twoBackShort["avg"] > twoBackLong["avg"] and ((lowVolatility and spreadOkay and not uptrend) or lowRange)):# or backtest["lastStopLoss"] == "sell"):# and not uptrend):
 				signal = "sell"
-				stopLoss = lastPrice + (4*lastItem["sd"])#(0.5*lastItem["sd"])
-				takeProfit = lastItem["avg"] - (8*lastItem["sd"])
-			elif (lastItem["avg"] > lastItemLongQueue["avg"] and twoBackShort["avg"] < twoBackLong["avg"] and (lowVolatility and spreadOkay and not downtrend and lowRange)):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
+				stopLoss = lastPrice + (0.5*lastItem["sd"])
+				takeProfit = lastItem["avg"] - (3*lastItem["sd"])
+			elif (lastItem["avg"] > lastItemLongQueue["avg"] and twoBackShort["avg"] < twoBackLong["avg"] and ((lowVolatility and spreadOkay and not downtrend) or lowRange)):# or backtest["lastStopLoss"] == "buy"):# and not downtrend):
 				signal = "buy"
-				stopLoss = lastPrice - (4*lastItem["sd"])#(0.5*lastItem["sd"])
-				takeProfit = lastItem["avg"] + (8*lastItem["sd"])
+				stopLoss = lastPrice - (0.5*lastItem["sd"])
+				takeProfit = lastItem["avg"] + (3*lastItem["sd"])
 
 		# BACKTEST ONLY
 		#if tradeOpen:
 		#	signal = backtest.checkPrice(lastPriceArray, backtest.checkOpen())	# also adjust open positions
 
 		signalArray = {"signal":signal,"stopLoss":round(stopLoss,5),"takeProfit":round(takeProfit,5),"lastPrice":round(lastPrice,5)}
+
+		print "signalArray: ", signalArray
+
+		if signal:
+			print ""
+			#display.drawLine(self.i, signal)
+
+		return signalArray
+
+	def maCrossAnticipate(self, lastPriceArray, currentQueue, longQueue, settings, tradeOpen):
+		lastPrice = (lastPriceArray["Buy"] + lastPriceArray["Sell"]) / 2
+		tradePrice = 0
+		upperBound = 0
+		lowerBound = 0
+		#settings["units"] = (settings["tradeAmount"] / lastPrice) *	 settings["leverage"]
+		signal = ""
+		stopLoss = 0
+		takeProfit = 0
+		salePrice = 0
+		signalArray = {"signal":"","stopLoss":0,"takeProfit":0}
+		lastItem = self.returnLastQueueItem(currentQueue)
+		lastItemLongQueue = self.returnLastQueueItem(longQueue)
+		firstItem = self.returnFirstQueueItem(currentQueue)
+		twoBackShort = self.returnQueueItemByIndex(currentQueue, -2)
+		twoBackLong = self.returnQueueItemByIndex(longQueue, -2)
+		self.movingAverage = lastItem["avg"]
+		self.sd = lastItem["sd"]
+		#print "Range: ", self.returnQueueRange(longQueue)
+		lowRange = (1 if self.returnQueueRange(longQueue) < 0.0025 else 0)
+		spreadOkay = (1 if lastItem["spread"] < 0.00004 else 0)
+		uptrend = (1 if lastItemLongQueue["avg"] - twoBackLong["avg"] > (1*twoBackLong["sd"]) else 0)
+		downtrend = (1 if twoBackLong["avg"] - lastItemLongQueue["avg"] > (1*twoBackLong["sd"]) else 0)
+		lowVolatility = (1 if lastItemLongQueue["avgSd"] < 0.00065 else 0)
+		#display.drawGraph(self.i, lastItemLongQueue["avg"], lastItem["avg"], lastPrice)
+		self.i = self.i + 1
+
+		if not tradeOpen:	# open conditions
+			#settings["tradeAmount"] = backtest.account["cash"] * 0.2
+			if (lastItem["avg"] < (lastItemLongQueue["avg"] + 0.5*lastItemLongQueue["sd"])) and (lastItem["avg"] > lastItemLongQueue["avg"]) and (twoBackShort["avg"] > (lastItemLongQueue["avg"] + 0.5*lastItemLongQueue["sd"])):
+				signal = "sell"
+				stopLoss = lastPrice + (0.5*lastItemLongQueue["sd"])
+				takeProfit = lastItemLongQueue["avg"] - (3*lastItemLongQueue["sd"])
+				tradePrice = lastItemLongQueue["avg"] - (0.5*lastItemLongQueue["sd"])
+				lowerBound = lastItemLongQueue["avg"] - (0.5*lastItemLongQueue["sd"])
+			if (lastItem["avg"] > (lastItemLongQueue["avg"] - 0.5*lastItemLongQueue["sd"])) and (lastItem["avg"] < lastItemLongQueue["avg"]) and (twoBackShort["avg"] < (lastItemLongQueue["avg"] - 0.5*lastItemLongQueue["sd"])):
+				signal = "buy"
+				stopLoss = lastPrice - (0.5*lastItemLongQueue["sd"])
+				takeProfit = lastItemLongQueue["avg"] + (3*lastItemLongQueue["sd"])
+				tradePrice = lastItemLongQueue["avg"] + (0.5*lastItemLongQueue["sd"])
+				upperBound = lastItemLongQueue["avg"] + (0.5*lastItemLongQueue["sd"])
+
+		# BACKTEST ONLY
+		#if tradeOpen:
+		#	signal = backtest.checkPrice(lastPriceArray, backtest.checkOpen())	# also adjust open positions
+
+		signalArray = {"signal":signal,"stopLoss":round(stopLoss,5),"takeProfit":round(takeProfit,5),"tradePrice":round(tradePrice,5),"upperBound":round(upperBound,5),"lowerBound":round(lowerBound,5)}
 
 		print "signalArray: ", signalArray
 
